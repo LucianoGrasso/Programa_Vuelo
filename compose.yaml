@@ -23,6 +23,16 @@ services:
             - sail
         depends_on:
             - mysql
+    phpmyadmin:
+        image: 'phpmyadmin/phpmyadmin'
+        ports:
+            - 8080:80
+        environment:
+            PMA_HOST: mysql
+        networks:
+            - sail
+        depends_on:
+            - mysql
     mysql:
         image: 'mysql:8.4'
         ports:
