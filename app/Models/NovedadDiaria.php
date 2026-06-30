@@ -16,8 +16,9 @@ class NovedadDiaria extends Model
         'piloto_servicio'
     ];
 
-    // AÑADE ESTO PARA GUARDAR EL ARREGLO COMO JSON AUTOMÁTICAMENTE
     protected $casts = [
         'aeronaves' => 'array',
+        'obs_instructores' => 'array',
+        'obs_alumnos' => 'array', // <-- AGREGAR ESTA LÍNEA
     ];
 }

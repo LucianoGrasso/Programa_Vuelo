@@ -27,9 +27,13 @@ class VueloController extends Controller
         $novedadHoy = \App\Models\NovedadDiaria::where('fecha', $hoy)->first();
         $novedadAyer = \App\Models\NovedadDiaria::where('fecha', $ayer)->first();
 
-        // NUEVO: Rescatar el último estado conocido de las aeronaves en el historial
+        // Historial de Aeronaves
         $ultimaNovedad = \App\Models\NovedadDiaria::whereNotNull('aeronaves')->orderBy('fecha', 'desc')->first();
         $ultimoEstadoAeronaves = $ultimaNovedad ? $ultimaNovedad->aeronaves : null;
+
+        // NUEVO: Historial de Observaciones de Instructores para heredar de día a día
+        $ultimaNovedadInst = \App\Models\NovedadDiaria::whereNotNull('obs_instructores')->orderBy('fecha', 'desc')->first();
+        $ultimoEstadoInstructores = $ultimaNovedadInst ? $ultimaNovedadInst->obs_instructores : null;
 
         return inertia('Pizarra/Index', [
             'vuelos' => $vuelos,
@@ -39,7 +43,8 @@ class VueloController extends Controller
             'fechaAyer' => $ayer,
             'novedadHoy' => $novedadHoy,
             'novedadAyer' => $novedadAyer,
-            'ultimoEstadoAeronaves' => $ultimoEstadoAeronaves // <- Se lo pasamos a React
+            'ultimoEstadoAeronaves' => $ultimoEstadoAeronaves,
+            'ultimoEstadoInstructores' => $ultimoEstadoInstructores // <- Pasamos el histórico a React
         ]);
     }
 
@@ -85,13 +90,13 @@ class VueloController extends Controller
     {
         $validated = $request->validate([
             'fecha' => 'required|date',
-            'obs_instructores' => 'nullable|string',
-            'obs_alumnos' => 'nullable|string',
-            'aeronaves' => 'nullable|array', // <- CAMBIAR DE 'string' a 'array'
+            'obs_instructores' => 'nullable|array',
+            'obs_alumnos' => 'nullable|array', // <-- CAMBIAR DE 'string' A 'array'
+            'aeronaves' => 'nullable|array',
             'piloto_servicio' => 'nullable|string',
         ]);
 
-        NovedadDiaria::updateOrCreate(
+        \App\Models\NovedadDiaria::updateOrCreate(
             ['fecha' => $validated['fecha']],
             $validated
         );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 
 const LISTA_AERONAVES = ['NAVAL 211', 'NAVAL 212', 'NAVAL 213', 'NAVAL 215', 'NAVAL 216', 'NAVAL 217', 'NAVAL 219'];
 
@@ -9,6 +9,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     const [isNovedadesModalOpen, setIsNovedadesModalOpen] = useState(false);
     const [editingVuelo, setEditingVuelo] = useState(null);
     const [showFuturos, setShowFuturos] = useState(false);
+    const [activeTabNovedades, setActiveTabNovedades] = useState('instructores');
+    const [isCustomZona, setIsCustomZona] = useState(false);
 
     const initAeronaves = (guardadasHoy, historico) => {
         if (guardadasHoy && Array.isArray(guardadasHoy) && guardadasHoy.length > 0) return guardadasHoy;
@@ -16,9 +18,31 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         return LISTA_AERONAVES.map(nombre => ({ nombre, estado: 'disponible', detalle: '' }));
     };
 
+    const initObsInstructores = (guardadas, listaInstructores) => {
+        const guardadasMap = Array.isArray(guardadas) 
+            ? guardadas.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {}) 
+            : {};
+        return listaInstructores.map(inst => ({
+            id: inst.id,
+            nombre: inst.nombre,
+            observacion: guardadasMap[inst.id] || ''
+        }));
+    };
+
+    const initObsAlumnos = (guardadas, listaAlumnos) => {
+        const guardadasMap = Array.isArray(guardadas) 
+            ? guardadas.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {}) 
+            : {};
+        return listaAlumnos.map(alum => ({
+            id: alum.id,
+            nombre: alum.nombre,
+            observacion: guardadasMap[alum.id] || ''
+        }));
+    };
+
     const formVuelo = useForm({
         fecha: fechaHoy,
-        aeronave: '', // Guardará el nombre del avión seleccionado
+        aeronave: '',
         etd: '',
         eta: '',
         mision: '',
@@ -30,8 +54,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
     const formNovedades = useForm({
         fecha: fechaHoy,
-        obs_instructores: novedadHoy?.obs_instructores || '',
-        obs_alumnos: novedadHoy?.obs_alumnos || '',
+        obs_instructores: initObsInstructores(novedadHoy?.obs_instructores, instructores), 
+        obs_alumnos: initObsAlumnos(novedadHoy?.obs_alumnos, alumnos),
         aeronaves: initAeronaves(novedadHoy?.aeronaves, ultimoEstadoAeronaves),
         piloto_servicio: novedadHoy?.piloto_servicio || '',
     });
@@ -40,8 +64,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         if (novedadHoy) {
             formNovedades.setData({
                 fecha: fechaHoy,
-                obs_instructores: novedadHoy.obs_instructores || '',
-                obs_alumnos: novedadHoy.obs_alumnos || '',
+                obs_instructores: initObsInstructores(novedadHoy.obs_instructores, instructores),
+                obs_alumnos: initObsAlumnos(novedadHoy.obs_alumnos, alumnos),
                 aeronaves: initAeronaves(novedadHoy.aeronaves, ultimoEstadoAeronaves),
                 piloto_servicio: novedadHoy.piloto_servicio || '',
             });
@@ -52,13 +76,9 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     const vuelosAyer = vuelos.filter(v => v.fecha === fechaAyer);
     const vuelosFuturos = vuelos.filter(v => v.fecha > fechaHoy);
 
-    // FILTRADO DE SEGURIDAD OPERATIVA: Obtenemos solo los aviones disponibles hoy
     const listaAeronavesHoy = initAeronaves(novedadHoy?.aeronaves, ultimoEstadoAeronaves);
     const aeronavesDisponibles = listaAeronavesHoy.filter(aero => aero.estado === 'disponible');
 
-    // Resguardo para consistencia del modo edición:
-    // Si estamos editando un vuelo antiguo cuyo avión pasó a estar "de baja" posteriormente,
-    // lo inyectamos temporalmente a la lista para que el selector no aparezca en blanco.
     if (editingVuelo && !aeronavesDisponibles.some(a => a.nombre === editingVuelo.aeronave)) {
         aeronavesDisponibles.unshift({ nombre: editingVuelo.aeronave, estado: 'baja' });
     }
@@ -74,6 +94,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         setEditingVuelo(null);
         formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'alumno_id', 'nota', 'estado_progreso');
         formVuelo.setData('fecha', fechaHoy);
+        setIsCustomZona(false); // Reseteamos la zona a las predefinidas
         setIsModalOpen(true);
     };
 
@@ -90,6 +111,11 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             nota: vuelo.nota || '',
             estado_progreso: vuelo.estado_progreso || 'programado'
         });
+        
+        // Detectamos si la zona guardada es una de las opciones fijas o fue escrita a mano
+        const zonaActual = vuelo.nota || '';
+        setIsCustomZona(!['', 'R-1', 'R-35', 'R-67'].includes(zonaActual));
+        
         setIsModalOpen(true);
     };
 
@@ -130,18 +156,13 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             case 'en_vuelo':
                 return (
                     <div className="flex justify-center items-center">
-                        <svg className="w-5 h-5 text-blue-400 drop-shadow-[0_0_6px_rgba(96,165,250,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 14l5 5L20 8" />
-                        </svg>
+                        <svg className="w-5 h-5 text-blue-400 drop-shadow-[0_0_6px_rgba(96,165,250,0.5)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 14l5 5L20 8" /></svg>
                     </div>
                 );
             case 'arribado':
                 return (
                     <div className="flex justify-center items-center relative">
-                        <svg className="w-5 h-5 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.6)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M5 14l5 5L20 8" />
-                            <path d="M4 5l16 16" />
-                        </svg>
+                        <svg className="w-5 h-5 text-red-500 drop-shadow-[0_0_5px_rgba(239,68,68,0.6)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 14l5 5L20 8" /><path d="M4 5l16 16" /></svg>
                     </div>
                 );
             case 'cancelado':
@@ -226,7 +247,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                     <span>{showFuturos ? 'Ocultar Próximos Vuelos' : `Ver Próximos Vuelos (${vuelosFuturos.length})`}</span>
                                 </button>
                             )}
-                            <button onClick={() => setIsNovedadesModalOpen(true)} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold text-xs uppercase tracking-wider py-3 px-4 rounded-md transition-all active:scale-95 flex items-center justify-center space-x-2 flex-1 md:flex-none">
+                            <button onClick={() => { setActiveTabNovedades('instructores'); setIsNovedadesModalOpen(true); }} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-200 font-bold text-xs uppercase tracking-wider py-3 px-4 rounded-md transition-all active:scale-95 flex items-center justify-center space-x-2 flex-1 md:flex-none">
                                 <span>Asignar Novedades Diarias</span>
                             </button>
                             <button onClick={openCreateModal} className="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-md transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-2 flex-1 md:flex-none">
@@ -247,43 +268,64 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                         <TablaVuelos titulo={formatearFechaTablero(fechaHoy)} listaVuelos={vuelosHoy} />
                     </div>
 
-                    {/* SECCIÓN INFERIOR DE NOVEDADES */}
+                    {/* SECCIÓN INFERIOR: NOVEDADES REESTRUCTURADA */}
                     <div className="mt-8 pt-6 border-t border-gray-800">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Novedades Generales de la Jornada (Hoy)</h3>
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Novedades Operativas del Día</h3>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 min-h-[120px] flex flex-col">
-                                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest border-b border-gray-700 pb-1.5 mb-2">Obs. Instructores</h4>
-                                <p className="text-xs text-gray-200 whitespace-pre-line flex-grow">{novedadHoy?.obs_instructores || <span className="text-gray-600 italic">Sin novedades</span>}</p>
-                            </div>
-                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 min-h-[120px] flex flex-col">
-                                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest border-b border-gray-700 pb-1.5 mb-2">Obs. Alumnos</h4>
-                                <p className="text-xs text-gray-200 whitespace-pre-line flex-grow">{novedadHoy?.obs_alumnos || <span className="text-gray-600 italic">Sin novedades</span>}</p>
-                            </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                             
-                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 min-h-[120px] flex flex-col">
-                                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest border-b border-gray-700 pb-1.5 mb-2">Aeronaves</h4>
-                                <div className="flex flex-col gap-1.5 flex-grow mt-1">
-                                    {listaAeronavesHoy.map((aero, idx) => (
-                                        <div key={idx} className="flex items-center space-x-3 bg-gray-900/60 px-2 py-1 rounded border border-gray-700/50">
-                                            <span className="text-[11px] font-bold text-gray-300 w-[60px]">{aero.nombre}</span>
-                                            <div className="flex items-center flex-grow space-x-2">
-                                                {aero.estado === 'disponible' ? (
-                                                    <svg className="w-4 h-4 text-blue-500 font-bold" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" /></svg>
-                                                ) : (
-                                                    <svg className="w-4 h-4 text-red-500 font-bold" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" /></svg>
-                                                )}
-                                                <span className="text-[11px] text-blue-300 font-mono uppercase tracking-wide truncate">{aero.detalle}</span>
+                            {/* COLUMNA IZQUIERDA: PERSONAL (Ocupa 8 columnas) */}
+                            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                
+                                {/* Instructores - Estilo lista compacta */}
+                                <div className="bg-gray-800/30 rounded border border-gray-700 p-3">
+                                    <h4 className="text-[10px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-1 mb-2">Instructores</h4>
+                                    <div className="flex flex-col gap-1">
+                                        {Array.isArray(novedadHoy?.obs_instructores) && novedadHoy.obs_instructores.filter(o => o?.observacion?.trim()).map((obs, idx) => (
+                                            <div key={idx} className="flex gap-2 text-[11px]">
+                                                <span className="font-bold text-blue-300 w-24 shrink-0 truncate">{obs.nombre}:</span>
+                                                <span className="text-gray-300">{obs.observacion}</span>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Alumnos - Estilo lista compacta */}
+                                <div className="bg-gray-800/30 rounded border border-gray-700 p-3">
+                                    <h4 className="text-[10px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-1 mb-2">Alumnos</h4>
+                                    <div className="flex flex-col gap-1">
+                                        {Array.isArray(novedadHoy?.obs_alumnos) && novedadHoy.obs_alumnos.filter(o => o?.observacion?.trim()).map((obs, idx) => (
+                                            <div key={idx} className="flex gap-2 text-[11px]">
+                                                <span className="font-bold text-green-400 w-24 shrink-0 truncate">{obs.nombre}:</span>
+                                                <span className="text-gray-300">{obs.observacion}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-800/50 rounded-lg border border-gray-700 p-4 min-h-[120px] flex flex-col">
-                                <h4 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest border-b border-gray-700 pb-1.5 mb-2">Piloto de Servicio</h4>
-                                <p className="text-xs text-gray-200 whitespace-pre-line flex-grow">{novedadHoy?.piloto_servicio || <span className="text-gray-600 italic">Sin asignar</span>}</p>
+                            {/* COLUMNA DERECHA: OPERACIONES (Ocupa 4 columnas) */}
+                            <div className="lg:col-span-4 flex flex-col gap-4">
+                                {/* Aeronaves - Tabla muy compacta */}
+                                <div className="bg-gray-800/30 rounded border border-gray-700 p-3">
+                                    <h4 className="text-[10px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-1 mb-2">Aeronaves</h4>
+                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                        {listaAeronavesHoy.map((aero, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 text-[10px]">
+                                                <span className={`w-2 h-2 rounded-full ${aero.estado === 'disponible' ? 'bg-blue-500' : 'bg-red-500'}`}></span>
+                                                <span className="text-gray-300 font-bold">{aero.nombre}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Piloto de servicio */}
+                                <div className="bg-gray-800/30 rounded border border-gray-700 p-3">
+                                    <h4 className="text-[10px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-1 mb-2">Piloto de Servicio</h4>
+                                    <p className="text-[11px] text-gray-300">{novedadHoy?.piloto_servicio || '-'}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -319,16 +361,9 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Fecha</label><input type="date" value={formVuelo.data.fecha} onChange={e => formVuelo.setData('fecha', e.target.value)} className={inputStyle} required style={{ colorScheme: 'dark' }} /></div>
-                                        
-                                        {/* NUEVO CAMBIO: Selector relacional filtrado para Aeronaves */}
                                         <div>
                                             <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Aeronave</label>
-                                            <select 
-                                                value={formVuelo.data.aeronave} 
-                                                onChange={e => formVuelo.setData('aeronave', e.target.value)} 
-                                                className={inputStyle} 
-                                                required
-                                            >
+                                            <select value={formVuelo.data.aeronave} onChange={e => formVuelo.setData('aeronave', e.target.value)} className={inputStyle} required>
                                                 <option value="" disabled className="text-gray-600">Seleccione Aeronave</option>
                                                 {aeronavesDisponibles.map((aero, idx) => (
                                                     <option key={idx} value={aero.nombre} className="text-white">
@@ -337,7 +372,6 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                 ))}
                                             </select>
                                         </div>
-
                                         <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">E.T.D (Salida)</label><input type="time" value={formVuelo.data.etd} onChange={e => formVuelo.setData('etd', e.target.value)} className={inputStyle} required style={{ colorScheme: 'dark' }} /></div>
                                         <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">E.T.A (Llegada)</label><input type="time" value={formVuelo.data.eta} onChange={e => formVuelo.setData('eta', e.target.value)} className={inputStyle} required style={{ colorScheme: 'dark' }} /></div>
                                         <div className="sm:col-span-2"><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Codigo de Vuelo</label><input type="text" placeholder="Ej: PS-3D" value={formVuelo.data.mision} onChange={e => formVuelo.setData('mision', e.target.value)} className={inputStyle} required /></div>
@@ -358,7 +392,41 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="sm:col-span-2"><label className="block text-xs font-bold uppercase tracking-wider text-green-400">Zona de Vuelo</label><input type="text" placeholder="Ej: R-67" value={formVuelo.data.nota} onChange={e => formVuelo.setData('nota', e.target.value)} className={`${inputStyle} border-green-500/30 focus:border-green-500`} /></div>
+                                        <div className="sm:col-span-2">
+                                            <label className="block text-xs font-bold uppercase tracking-wider text-green-400 mb-1">Zona de Vuelo</label>
+                                            <div className="flex space-x-2">
+                                                <select 
+                                                    value={isCustomZona ? 'Otra' : (formVuelo.data.nota || '')} 
+                                                    onChange={(e) => {
+                                                        if (e.target.value === 'Otra') {
+                                                            setIsCustomZona(true);
+                                                            formVuelo.setData('nota', ''); // Limpia para que escribas desde cero
+                                                        } else {
+                                                            setIsCustomZona(false);
+                                                            formVuelo.setData('nota', e.target.value); // Asigna la zona seleccionada
+                                                        }
+                                                    }} 
+                                                    className={`${inputStyle} ${isCustomZona ? 'w-1/3' : 'w-full'} border-green-500/30 focus:border-green-500 mt-0`}
+                                                >
+                                                    <option value="" disabled className="text-gray-600">Seleccione Zona</option>
+                                                    <option value="R-1" className="text-white">R-1</option>
+                                                    <option value="R-35" className="text-white">R-35</option>
+                                                    <option value="R-67" className="text-white">R-67</option>
+                                                    <option value="Otra" className="text-yellow-400">Otra (Especificar)</option>
+                                                </select>
+                                                {/* Solo se muestra si seleccionaste "Otra" o si el vuelo editado tiene un texto distinto */}
+                                                {isCustomZona && (
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Ej: Raid a SCEL..." 
+                                                        value={formVuelo.data.nota} 
+                                                        onChange={e => formVuelo.setData('nota', e.target.value)} 
+                                                        className={`${inputStyle} w-2/3 border-green-500/30 focus:border-green-500 mt-0`} 
+                                                        autoFocus
+                                                    />
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700/60 mt-4">
                                         <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancelar</button>
@@ -369,22 +437,99 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                         </div>
                     )}
 
-                    {/* MODAL 2: NOVEDADES */}
+                    {/* MODAL 2: NOVEDADES CON PESTAÑAS (TABS REORDENADAS) */}
                     {isNovedadesModalOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                            <div className="bg-gray-800 border border-gray-700 w-full max-w-3xl rounded-xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+                            <div className="bg-gray-800 border border-gray-700 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden flex flex-col">
                                 <div className="px-6 py-4 bg-gray-900/50 border-b border-gray-700 flex justify-between items-center shrink-0">
                                     <h3 className="text-sm font-bold text-white uppercase tracking-widest">Asignar Novedades Generales</h3>
                                     <button onClick={() => setIsNovedadesModalOpen(false)} className="text-gray-400 hover:text-white text-xl font-bold focus:outline-none">&times;</button>
                                 </div>
-                                <div className="p-6 overflow-y-auto flex-grow">
+                                
+                                {/* NAVEGACIÓN DE PESTAÑAS - ORDEN REVISADO */}
+                                <div className="flex border-b border-gray-700 bg-gray-900/30 overflow-x-auto">
+                                    <button 
+                                        type="button"
+                                        onClick={() => setActiveTabNovedades('instructores')} 
+                                        className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider transition-all min-w-[120px] ${activeTabNovedades === 'instructores' ? 'border-b-2 border-blue-500 text-blue-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}`}
+                                    >
+                                        Instructores
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setActiveTabNovedades('alumnos')} 
+                                        className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider transition-all min-w-[120px] ${activeTabNovedades === 'alumnos' ? 'border-b-2 border-blue-500 text-blue-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}`}
+                                    >
+                                        Alumnos
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setActiveTabNovedades('aeronaves')} 
+                                        className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider transition-all min-w-[120px] ${activeTabNovedades === 'aeronaves' ? 'border-b-2 border-blue-500 text-blue-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}`}
+                                    >
+                                        Aeronaves
+                                    </button>
+                                    <button 
+                                        type="button"
+                                        onClick={() => setActiveTabNovedades('general')} 
+                                        className={`flex-1 py-3 px-4 text-xs font-bold uppercase tracking-wider transition-all min-w-[120px] ${activeTabNovedades === 'general' ? 'border-b-2 border-blue-500 text-blue-400 bg-gray-800/50' : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30'}`}
+                                    >
+                                        General
+                                    </button>
+                                </div>
+
+                                <div className="p-6 overflow-y-auto max-h-[60vh] min-h-[300px]">
                                     <form id="form-novedades" onSubmit={handleNovedadesSubmit} className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Obs. Instructores</label><textarea placeholder="Novedades instructores..." value={formNovedades.data.obs_instructores} onChange={e => formNovedades.setData('obs_instructores', e.target.value)} className={textareaStyle} /></div>
-                                            <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Obs. Alumnos</label><textarea placeholder="Ej: OPS: T2 Viani" value={formNovedades.data.obs_alumnos} onChange={e => formNovedades.setData('obs_alumnos', e.target.value)} className={textareaStyle} /></div>
-                                            <div><label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Piloto de Servicio</label><textarea placeholder="Asignación..." value={formNovedades.data.piloto_servicio} onChange={e => formNovedades.setData('piloto_servicio', e.target.value)} className={textareaStyle} /></div>
-                                            <div className="md:col-span-2 mt-2">
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-blue-400 mb-3 border-b border-gray-700 pb-2">Control de Estado de Aeronaves</label>
+                                        
+                                        {/* 1. PESTAÑA: INSTRUCTORES */}
+                                        {activeTabNovedades === 'instructores' && (
+                                            <div className="animate-fade-in">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {formNovedades.data.obs_instructores.map((obs, idx) => (
+                                                        <div key={obs.id} className="flex flex-col bg-gray-900/50 p-2 rounded border border-gray-700 focus-within:border-blue-500 transition-colors">
+                                                            <span className="text-[11px] font-bold text-gray-300 mb-1">{obs.nombre}</span>
+                                                            <textarea
+                                                                value={obs.observacion}
+                                                                onChange={(e) => {
+                                                                    const nuevas = [...formNovedades.data.obs_instructores];
+                                                                    nuevas[idx].observacion = e.target.value;
+                                                                    formNovedades.setData('obs_instructores', nuevas);
+                                                                }}
+                                                                placeholder="Sin novedad..."
+                                                                className={textareaStyle + " h-16 bg-gray-950"}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 2. PESTAÑA: ALUMNOS */}
+                                        {activeTabNovedades === 'alumnos' && (
+                                            <div className="animate-fade-in">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {formNovedades.data.obs_alumnos.map((obs, idx) => (
+                                                        <div key={obs.id} className="flex flex-col bg-gray-900/50 p-2 rounded border border-gray-700 focus-within:border-blue-500 transition-colors">
+                                                            <span className="text-[11px] font-bold text-gray-300 mb-1">{obs.nombre}</span>
+                                                            <textarea
+                                                                value={obs.observacion}
+                                                                onChange={(e) => {
+                                                                    const nuevas = [...formNovedades.data.obs_alumnos];
+                                                                    nuevas[idx].observacion = e.target.value;
+                                                                    formNovedades.setData('obs_alumnos', nuevas);
+                                                                }}
+                                                                placeholder="Sin novedad..."
+                                                                className={textareaStyle + " h-16 bg-gray-950"}
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* 3. PESTAÑA: AERONAVES */}
+                                        {activeTabNovedades === 'aeronaves' && (
+                                            <div className="animate-fade-in">
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                                     {formNovedades.data.aeronaves.map((aero, idx) => (
                                                         <div key={idx} className="flex items-center space-x-2 bg-gray-900/50 p-2 rounded border border-gray-700">
@@ -398,12 +543,23 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                     ))}
                                                 </div>
                                             </div>
-                                        </div>
+                                        )}
+
+                                        {/* 4. PESTAÑA: GENERAL (PILOTO DE SERVICIO) */}
+                                        {activeTabNovedades === 'general' && (
+                                            <div className="grid grid-cols-1 gap-4 animate-fade-in">
+                                                <div>
+                                                    <label className="block text-xs font-bold uppercase tracking-wider text-gray-300 mb-1">Piloto de Servicio</label>
+                                                    <textarea placeholder="Asignación..." value={formNovedades.data.piloto_servicio} onChange={e => formNovedades.setData('piloto_servicio', e.target.value)} className={textareaStyle + " h-24"} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        
                                     </form>
                                 </div>
                                 <div className="px-6 py-4 border-t border-gray-700/60 bg-gray-900/50 flex justify-end space-x-3 shrink-0">
-                                    <button type="button" onClick={() => setIsNovedadesModalOpen(false)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancelar</button>
-                                    <button type="submit" form="form-novedades" disabled={formNovedades.processing} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase py-2 px-5 rounded-md shadow-lg">Actualizar Tablero</button>
+                                    <button type="button" onClick={() => setIsNovedadesModalOpen(false)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                                    <button type="submit" form="form-novedades" disabled={formNovedades.processing} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase py-2 px-5 rounded-md shadow-lg transition-colors">Actualizar Tablero</button>
                                 </div>
                             </div>
                         </div>
