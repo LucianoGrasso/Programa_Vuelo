@@ -61,6 +61,7 @@ class VueloController extends Controller
             'alumno_id' => 'required|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
+            'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
         ]);
 
         Vuelo::create($validated);
@@ -80,6 +81,7 @@ class VueloController extends Controller
             'alumno_id' => 'required|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
+            'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
         ]);
 
         $vuelo->update($validated);
@@ -94,6 +96,7 @@ class VueloController extends Controller
             'obs_alumnos' => 'nullable|array', // <-- CAMBIAR DE 'string' A 'array'
             'aeronaves' => 'nullable|array',
             'piloto_servicio' => 'nullable|string',
+            'actividades' => 'nullable|string',
         ]);
 
         \App\Models\NovedadDiaria::updateOrCreate(
@@ -114,6 +117,19 @@ class VueloController extends Controller
 
         return inertia('Pizarra/Historial', [
             'vuelos' => $vuelos
+        ]);
+    }
+    
+    public function evaluaciones()
+    {
+        // Traemos a los alumnos activos con su historial de vuelos y los instructores de esos vuelos
+        $alumnos = \App\Models\Alumno::where('activo', true)
+            ->with(['vuelos.instructor'])
+            ->orderBy('nombre')
+            ->get();
+
+        return inertia('Pizarra/Evaluaciones', [
+            'alumnos' => $alumnos
         ]);
     }
 }

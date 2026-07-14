@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Instructor extends Model
 {
     protected $table = 'instructores';
-    protected $fillable = ['nombre', 'activo'];
+    protected $fillable = ['nombre', 'activo', 'nombre_combate', 'numero'];
 
     // Añade esta relación
     public function vuelos()

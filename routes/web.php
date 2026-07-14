@@ -21,6 +21,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/historial', [VueloController::class, 'historial'])->name('pizarra.historial');
 
+    Route::get('/evaluaciones', [VueloController::class, 'evaluaciones'])->name('pizarra.evaluaciones');
+
 
     Route::get('/instructores', [InstructorController::class, 'index'])->name('instructores.index');
     Route::post('/instructores', [InstructorController::class, 'store'])->name('instructores.store');

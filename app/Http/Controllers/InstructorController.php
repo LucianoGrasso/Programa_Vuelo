@@ -20,22 +20,27 @@ class InstructorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:instructores',
-            'activo' => 'boolean'
+            'nombre' => 'required|string|max:255',
+            'nombre_combate' => 'required|string|max:255', // Ahora es requerido
+            'numero' => 'nullable|integer',
         ]);
 
         Instructor::create($validated);
+
         return redirect()->back();
     }
 
     public function update(Request $request, Instructor $instructor)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:255|unique:instructores,nombre,' . $instructor->id,
+            'nombre' => 'required|string|max:255',
+            'nombre_combate' => 'required|string|max:255',
+            'numero' => 'nullable|integer',
             'activo' => 'boolean'
         ]);
 
         $instructor->update($validated);
+
         return redirect()->back();
     }
 }

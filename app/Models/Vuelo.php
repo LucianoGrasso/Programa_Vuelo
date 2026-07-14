@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Vuelo extends Model
 {
     protected $fillable = [
-        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'alumno_id', 'nota', 'estado_progreso'
+        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'alumno_id', 'nota', 'estado_progreso', 'calificacion'
     ];
 
     public function instructor(): BelongsTo

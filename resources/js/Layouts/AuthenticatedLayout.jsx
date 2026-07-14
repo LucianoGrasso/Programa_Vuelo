@@ -5,12 +5,13 @@ import { Link } from '@inertiajs/react';
 export default function AuthenticatedLayout({ user, children }) {
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
-    // SOLUCIÓN: Usamos el pathname nativo del navegador para saber qué pestaña marcar como activa
+    // Lógica nativa para detectar la pestaña activa
     const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
     const isPizarraActive = currentPath === '/pizarra';
     const isHistorialActive = currentPath === '/historial';
     const isInstructoresActive = currentPath.startsWith('/instructores');
     const isAlumnosActive = currentPath.startsWith('/alumnos');
+    const isEvaluacionesActive = currentPath.startsWith('/evaluaciones'); // NUEVO
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -30,6 +31,12 @@ export default function AuthenticatedLayout({ user, children }) {
                                 <Link href={route('pizarra.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isPizarraActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
                                     Pizarra
                                 </Link>
+                                
+                                {/* NUEVA PESTAÑA: EVALUACIONES */}
+                                <Link href={route('pizarra.evaluaciones')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isEvaluacionesActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
+                                    Evaluaciones
+                                </Link>
+
                                 <Link href={route('pizarra.historial')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isHistorialActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
                                     Historial
                                 </Link>
@@ -81,6 +88,12 @@ export default function AuthenticatedLayout({ user, children }) {
                         <Link href={route('pizarra.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isPizarraActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
                             Pizarra
                         </Link>
+                        
+                        {/* NUEVO ENLACE MÓVIL: EVALUACIONES */}
+                        <Link href={route('pizarra.evaluaciones')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isEvaluacionesActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
+                            Evaluaciones
+                        </Link>
+
                         <Link href={route('pizarra.historial')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isHistorialActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
                             Historial
                         </Link>

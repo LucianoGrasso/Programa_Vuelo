@@ -13,7 +13,8 @@ class NovedadDiaria extends Model
         'obs_instructores',
         'obs_alumnos',
         'aeronaves',
-        'piloto_servicio'
+        'piloto_servicio',
+        'actividades'
     ];
 
     protected $casts = [
