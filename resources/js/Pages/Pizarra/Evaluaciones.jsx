@@ -3,83 +3,21 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router } from '@inertiajs/react';
 
 const ETAPAS_CURSO = [
-    { 
-        id: 'pre_solo', 
-        nombre: 'Pre Solo', 
-        misiones: [
-            'SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 
-            'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 
-            'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'precision', 
-        nombre: 'Precisión', 
-        misiones: [
-            'SP-1D', 'P-1D', 'P-2S', 'P-3D', 'P-4S', 'P-5D', 'P-6S', 'P-7D', 'P-8S', 
-            'P-9D', 'P-10S', 'P-11D', 'P-12DX', 
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'acrobacias', 
-        nombre: 'Acrobacias', 
-        misiones: [
-            'A-1D', 'A-2D', 'A-3D', 'A-4S', 'A-5D', 'A-6S', 'A-7D', 'A-8S', 'A-9D', 'A-10DX',
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'navegacion', 
-        nombre: 'Navegación', 
-        misiones: [
-            'SNV-1D', 'NV-1D', 'NV-2D', 'NV-3D', 'NV-4D', 'NV-5D', 'NV-6DX',
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'instrumentos_basicos', 
-        nombre: 'Inst. Básicos', 
-        misiones: [
-            'SIB-1D', 'IB-1D', 'SIB-2D', 'IB-2D', 'SIB-3D', 'IB-3D', 'SIB-4D', 'IB-4D', 
-            'SIB-5D', 'IB-5D', 'SIB-6D', 'IB-6DX', 
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'radio_instrumento', 
-        nombre: 'Radio Inst.', 
-        misiones: [
-            'SRI-1D', 'RI-1D', 'SRI-2D', 'RI-2D', 'SRI-3D', 'RI-3D', 'SRI-4D', 'RI-4D', 
-            'SRI-5D', 'RI-5D', 'SRI-6D', 'RI-6D', 'SRI-7D', 'RI-7D', 'SRI-8D', 'RI-8D', 
-            'SRI-9D', 'RI-9D', 'RI-10D', 'RI-11D', 'RI-12D', 'RI-13D', 'RI-14D', 'RI-15D', 'RI-16DX',
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'formacion', 
-        nombre: 'Formación', 
-        misiones: [
-            'F-1D', 'F-2D', 'F-3D', 'F-4D', 'F-5D', 'F-6D', 'F-7D', 'F-8DX',
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    },
-    { 
-        id: 'nocturno', 
-        nombre: 'Nocturno', 
-        misiones: [
-            'N-1D', 'N-2D', 'N-3D', 'N-4DX',
-            'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'
-        ] 
-    }
+    { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'precision', nombre: 'Precisión', misiones: ['SP-1D', 'P-1D', 'P-2S', 'P-3D', 'P-4S', 'P-5D', 'P-6S', 'P-7D', 'P-8S', 'P-9D', 'P-10S', 'P-11D', 'P-12DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'acrobacias', nombre: 'Acrobacias', misiones: ['A-1D', 'A-2D', 'A-3D', 'A-4S', 'A-5D', 'A-6S', 'A-7D', 'A-8S', 'A-9D', 'A-10DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'navegacion', nombre: 'Navegación', misiones: ['SNV-1D', 'NV-1D', 'NV-2D', 'NV-3D', 'NV-4D', 'NV-5D', 'NV-6DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'instrumentos_basicos', nombre: 'Inst. Básicos', misiones: ['SIB-1D', 'IB-1D', 'SIB-2D', 'IB-2D', 'SIB-3D', 'IB-3D', 'SIB-4D', 'IB-4D', 'SIB-5D', 'IB-5D', 'SIB-6D', 'IB-6DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'radio_instrumento', nombre: 'Radio Inst.', misiones: ['SRI-1D', 'RI-1D', 'SRI-2D', 'RI-2D', 'SRI-3D', 'RI-3D', 'SRI-4D', 'RI-4D', 'SRI-5D', 'RI-5D', 'SRI-6D', 'RI-6D', 'SRI-7D', 'RI-7D', 'SRI-8D', 'RI-8D', 'SRI-9D', 'RI-9D', 'RI-10D', 'RI-11D', 'RI-12D', 'RI-13D', 'RI-14D', 'RI-15D', 'RI-16DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'formacion', nombre: 'Formación', misiones: ['F-1D', 'F-2D', 'F-3D', 'F-4D', 'F-5D', 'F-6D', 'F-7D', 'F-8DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'nocturno', nombre: 'Nocturno', misiones: ['N-1D', 'N-2D', 'N-3D', 'N-4DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] }
 ];
 
 const inputStyle = "mt-1 block w-full bg-gray-950 border border-gray-600 text-white rounded-md shadow-sm px-3 py-2 text-xs focus:ring-blue-500 focus:border-blue-500";
 
-// COMPONENTE CELDA REFINADO: Cambia de color según la calificación
-const CeldaProgreso = ({ vuelo }) => {
-    if (!vuelo) return <div className="w-14 h-14 bg-gray-900/30 border border-gray-700/30 rounded flex items-center justify-center opacity-40"><span className="text-gray-600 text-xs">-</span></div>;
+// COMPONENTE CELDA REFINADO: Cruz en "X" perfecta con SVG y evento Doble Clic
+const CeldaProgreso = ({ vuelo, onDoubleClick }) => {
+    if (!vuelo) return <div className="w-[52px] h-[52px] bg-gray-900/30 border border-gray-700/30 rounded flex items-center justify-center opacity-40"><span className="text-gray-600 text-xs">-</span></div>;
 
     const [year, month, day] = vuelo.fecha.split('-');
     const zona = vuelo.nota || '-';
@@ -87,19 +25,26 @@ const CeldaProgreso = ({ vuelo }) => {
     const isAprobado = vuelo.calificacion === 'aprobado';
     const isReprobado = vuelo.calificacion === 'reprobado';
 
-    // Colores dinámicos
-    const borderColor = isAprobado ? 'border-blue-500/80 shadow-[0_0_8px_rgba(59,130,246,0.3)]' : (isReprobado ? 'border-red-500/80 shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'border-gray-500');
-    const crossColor = isAprobado ? 'bg-blue-500/30' : (isReprobado ? 'bg-red-500/30' : 'bg-gray-500/50');
+    const borderColor = isAprobado ? 'border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.3)]' : (isReprobado ? 'border-red-500 shadow-[0_0_8px_rgba(239,68,68,0.3)]' : 'border-gray-500');
+    // Usamos stroke para pintar las líneas del SVG
+    const crossColor = isAprobado ? 'stroke-blue-500/60' : (isReprobado ? 'stroke-red-500/60' : 'stroke-gray-500/60');
     const dataColor = isAprobado ? 'text-blue-300' : (isReprobado ? 'text-red-400' : 'text-gray-300');
     const zonaColor = isAprobado ? 'text-blue-400' : (isReprobado ? 'text-red-500' : 'text-green-400');
 
     return (
-        <div className={`relative w-14 h-14 bg-gray-800 border ${borderColor} rounded flex items-center justify-center font-mono text-[10px] font-bold mx-auto transition-transform hover:scale-110 cursor-default`}>
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className={`w-full h-[1px] ${crossColor}`}></div>
-                <div className={`absolute h-full w-[1px] ${crossColor}`}></div>
-            </div>
-            <div className={`absolute top-0.5 w-full text-center tracking-tighter truncate px-1 ${zonaColor}`} title={zona}>{zona}</div>
+        <div 
+            onDoubleClick={() => onDoubleClick(vuelo)}
+            className={`relative w-[52px] h-[52px] bg-gray-800 border ${borderColor} flex items-center justify-center font-mono text-[10px] font-bold mx-auto transition-transform hover:scale-110 cursor-pointer select-none hover:ring-2 ring-white/20`}
+            title="Doble clic para calificar"
+        >
+            {/* SVG para trazar la X diagonal perfecta de esquina a esquina */}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+                <line x1="0" y1="0" x2="100%" y2="100%" className={crossColor} strokeWidth="1" />
+                <line x1="100%" y1="0" x2="0" y2="100%" className={crossColor} strokeWidth="1" />
+            </svg>
+
+            {/* Datos posicionados ajustados a los triángulos de la X */}
+            <div className={`absolute top-0.5 w-full text-center tracking-tighter truncate px-1 ${zonaColor}`}>{zona}</div>
             <div className={`absolute left-1 top-1/2 -translate-y-1/2 ${dataColor}`}>{numInstructor}</div>
             <div className={`absolute right-1 top-1/2 -translate-y-1/2 ${dataColor}`}>{month}</div>
             <div className={`absolute bottom-0.5 w-full text-center ${dataColor}`}>{day}</div>
@@ -110,19 +55,21 @@ const CeldaProgreso = ({ vuelo }) => {
 export default function Evaluaciones({ auth, alumnos }) {
     const [activeTab, setActiveTab] = useState(ETAPAS_CURSO[0].id);
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+    
+    // NUEVO ESTADO: Vuelo seleccionado para calificar con doble clic
+    const [vueloEditandoCalificacion, setVueloEditandoCalificacion] = useState(null);
+
     const etapaActual = ETAPAS_CURSO.find(e => e.id === activeTab);
 
-    // Formulario para ingreso manual directo a la matriz
     const formManual = useForm({
         fecha: new Date().toISOString().split('T')[0],
-        aeronave: 'SIMULADOR', // Valor por defecto o irrelevante para este caso
+        aeronave: 'NAVAL 211', 
         etd: '00:00', eta: '01:00',
         mision: '', instructor_id: '', alumno_id: '', nota: '',
-        estado_progreso: 'arribado', // Lo forzamos a arribado
+        estado_progreso: 'arribado',
         calificacion: 'aprobado'
     });
 
-    // Extraemos instructores únicos desde los vuelos para el selector manual (o idealmente pasarlos desde el backend)
     const instructoresUnicos = [];
     alumnos.forEach(a => a.vuelos.forEach(v => {
         if(v.instructor && !instructoresUnicos.find(i => i.id === v.instructor.id)) instructoresUnicos.push(v.instructor);
@@ -132,6 +79,19 @@ export default function Evaluaciones({ auth, alumnos }) {
         e.preventDefault();
         router.post(route('pizarra.store'), formManual.data, {
             onSuccess: () => { formManual.reset('mision', 'instructor_id', 'alumno_id', 'nota'); setIsManualModalOpen(false); }
+        });
+    };
+
+    // NUEVA FUNCIÓN: Actualizar calificación rápida
+    const handleActualizarCalificacion = (nuevaCalificacion) => {
+        if (!vueloEditandoCalificacion) return;
+        
+        router.put(route('pizarra.update', vueloEditandoCalificacion.id), {
+            ...vueloEditandoCalificacion,
+            calificacion: nuevaCalificacion
+        }, {
+            preserveScroll: true, // Evita que la página salte al inicio
+            onSuccess: () => setVueloEditandoCalificacion(null)
         });
     };
 
@@ -166,7 +126,6 @@ export default function Evaluaciones({ auth, alumnos }) {
                         ))}
                     </div>
 
-                    {/* MATRIZ DE EVALUACIONES (ESTANDARIZADA) */}
                     <div className="bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-700 flex flex-col animate-fade-in">
                         <div className="px-4 py-3 bg-gray-700/60 border-b border-gray-600 flex justify-between items-center">
                             <span className="text-sm font-bold uppercase tracking-widest text-white capitalize">
@@ -177,7 +136,7 @@ export default function Evaluaciones({ auth, alumnos }) {
                             </span>
                         </div>
 
-                        <div className="overflow-x-auto flex-grow">
+                        <div className="overflow-x-auto flex-grow pb-4">
                             <table className="min-w-full divide-y divide-gray-700 text-center">
                                 <thead className="bg-gray-900/40">
                                     <tr>
@@ -185,7 +144,7 @@ export default function Evaluaciones({ auth, alumnos }) {
                                             Alumno
                                         </th>
                                         {etapaActual.misiones.map((mision) => (
-                                            <th key={mision} className="px-2 py-4 text-center text-xs font-bold text-blue-400 uppercase tracking-widest min-w-[80px]">
+                                            <th key={mision} className="px-2 py-4 text-center text-[10px] font-bold text-blue-400 uppercase tracking-wider min-w-[70px]">
                                                 {mision}
                                             </th>
                                         ))}
@@ -200,8 +159,9 @@ export default function Evaluaciones({ auth, alumnos }) {
                                             {etapaActual.misiones.map((mision) => {
                                                 const vueloAsignado = alumno.vuelos.find(v => v.mision.toUpperCase() === mision.toUpperCase());
                                                 return (
-                                                    <td key={mision} className="px-2 py-3 whitespace-nowrap text-center border-r border-gray-700/30 last:border-0">
-                                                        <CeldaProgreso vuelo={vueloAsignado} />
+                                                    <td key={mision} className="px-1 py-2 whitespace-nowrap text-center border-r border-gray-700/30 last:border-0">
+                                                        {/* Pasamos la función de doble clic a la celda */}
+                                                        <CeldaProgreso vuelo={vueloAsignado} onDoubleClick={setVueloEditandoCalificacion} />
                                                     </td>
                                                 );
                                             })}
@@ -218,7 +178,6 @@ export default function Evaluaciones({ auth, alumnos }) {
                             </table>
                         </div>
                         
-                        {/* LEYENDA DEL CUADRANTE */}
                         <div className="bg-gray-900/60 p-4 border-t border-gray-700 flex flex-wrap items-center justify-center gap-6 text-[10px] uppercase font-bold tracking-widest text-gray-400">
                             <span className="text-gray-500">Leyenda de Celda:</span>
                             <div className="flex items-center gap-2"><span className="text-green-400">Arriba:</span> Zona</div>
@@ -226,11 +185,37 @@ export default function Evaluaciones({ auth, alumnos }) {
                             <div className="flex items-center gap-2"><span className="text-gray-300">Der:</span> Mes</div>
                             <div className="flex items-center gap-2"><span className="text-gray-300">Abajo:</span> Día</div>
                             <div className="ml-4 flex gap-4 border-l border-gray-700 pl-4">
-                                <div className="flex items-center gap-1"><span className="w-3 h-3 border border-blue-500 bg-blue-500/20 inline-block rounded-sm"></span> Aprobado</div>
-                                <div className="flex items-center gap-1"><span className="w-3 h-3 border border-red-500 bg-red-500/20 inline-block rounded-sm"></span> Reprobado</div>
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 border border-blue-500 bg-blue-500/20 inline-block rounded-sm relative"><svg className="absolute inset-0 w-full h-full"><line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1"/><line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" strokeWidth="1"/></svg></span> Aprobado</div>
+                                <div className="flex items-center gap-1"><span className="w-3 h-3 border border-red-500 bg-red-500/20 inline-block rounded-sm relative"><svg className="absolute inset-0 w-full h-full text-red-500"><line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1"/><line x1="100%" y1="0" x2="0" y2="100%" stroke="currentColor" strokeWidth="1"/></svg></span> Reprobado</div>
                             </div>
                         </div>
                     </div>
+
+                    {/* NUEVO MODAL RÁPIDO: DOBLE CLIC PARA CALIFICAR */}
+                    {vueloEditandoCalificacion && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
+                            <div className="bg-gray-800 border border-gray-600 w-full max-w-sm rounded-xl shadow-2xl overflow-hidden flex flex-col text-center">
+                                <div className="p-6">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Calificación Rápida</h3>
+                                    <p className="text-lg font-black text-white uppercase mb-6">{vueloEditandoCalificacion.mision}</p>
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <button onClick={() => handleActualizarCalificacion('aprobado')} className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                                            Aprobado (Azul)
+                                        </button>
+                                        <button onClick={() => handleActualizarCalificacion('reprobado')} className="bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-500 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)]">
+                                            Reprobado (Rojo)
+                                        </button>
+                                        <button onClick={() => handleActualizarCalificacion('pendiente')} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-500 text-gray-300 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all">
+                                            Dejar en Blanco (Pendiente)
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-900/50 p-4 border-t border-gray-700">
+                                    <button onClick={() => setVueloEditandoCalificacion(null)} className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-wider">Cancelar</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* MODAL MANUAL DE EVALUACIONES */}
                     {isManualModalOpen && (
@@ -243,7 +228,7 @@ export default function Evaluaciones({ auth, alumnos }) {
                                 <form onSubmit={handleManualSubmit} className="p-6 space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div><label className="block text-xs font-bold uppercase text-gray-300">Fecha</label><input type="date" value={formManual.data.fecha} onChange={e => formManual.setData('fecha', e.target.value)} className={inputStyle} required style={{ colorScheme: 'dark' }} /></div>
-                                        <div><label className="block text-xs font-bold uppercase text-gray-300">Zona de Vuelo</label><input type="text" placeholder="Ej: R-1" value={formManual.data.nota} onChange={e => formManual.setData('nota', e.target.value)} className={inputStyle} required /></div>
+                                        <div><label className="block text-xs font-bold uppercase text-gray-300">Zona de Vuelo</label><input type="text" placeholder="Ej: R-1" value={formManual.data.nota} onChange={e => formManual.setData('nota', e.target.value)} className={inputStyle} /></div>
                                         <div>
                                             <label className="block text-xs font-bold uppercase text-gray-300">Alumno</label>
                                             <select value={formManual.data.alumno_id} onChange={e => formManual.setData('alumno_id', e.target.value)} className={inputStyle} required>

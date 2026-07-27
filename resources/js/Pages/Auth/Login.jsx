@@ -18,12 +18,18 @@ export default function Login({ status }) {
         });
     };
 
-    // Estilo unificado de alta visibilidad para las cajas de texto
+    // Estilo unificado de alta visibilidad para las cajas de texto (Intacto)
     const inputStyle = "mt-1 block w-full bg-gray-900/90 border border-gray-600 text-gray-100 placeholder-gray-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 rounded-md p-2.5 transition-all text-sm";
 
     return (
         <GuestLayout>
             <Head title="Iniciar Sesión" />
+
+            {/* Título más discreto y elegante */}
+            <h2 className="text-center text-gray-300 text-base sm:text-lg font-medium mb-3">
+                Programa de vuelos de la Escuela de Aviación Naval
+            </h2>
+
 
             {status && (
                 <div className="mb-4 text-sm font-medium text-green-400">
