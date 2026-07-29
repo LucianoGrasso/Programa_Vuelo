@@ -12,6 +12,8 @@ export default function AuthenticatedLayout({ user, children }) {
     const isInstructoresActive = currentPath.startsWith('/instructores');
     const isAlumnosActive = currentPath.startsWith('/alumnos');
     const isEvaluacionesActive = currentPath.startsWith('/evaluaciones'); // NUEVO
+    const isUsuariosActive = currentPath.startsWith('/usuarios'); // NUEVO
+    const isAdmin = user.role === 'admin';
 
     return (
         <div className="min-h-screen bg-gray-900 text-gray-100">
@@ -40,12 +42,19 @@ export default function AuthenticatedLayout({ user, children }) {
                                 <Link href={route('pizarra.historial')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isHistorialActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
                                     Historial
                                 </Link>
-                                <Link href={route('instructores.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isInstructoresActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
-                                    Instructores
-                                </Link>
-                                <Link href={route('alumnos.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isAlumnosActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
-                                    Alumnos
-                                </Link>
+                                {isAdmin && (
+                                    <>
+                                        <Link href={route('instructores.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isInstructoresActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
+                                            Instructores
+                                        </Link>
+                                        <Link href={route('alumnos.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isAlumnosActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
+                                            Alumnos
+                                        </Link>
+                                        <Link href={route('usuarios.index')} className={`inline-flex items-center px-1 pt-1 border-b-2 text-xs font-bold tracking-widest uppercase transition-colors duration-150 ${isUsuariosActive ? 'border-blue-400 text-blue-400 font-extrabold' : 'border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600'}`}>
+                                            Usuarios
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -97,12 +106,19 @@ export default function AuthenticatedLayout({ user, children }) {
                         <Link href={route('pizarra.historial')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isHistorialActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
                             Historial
                         </Link>
-                        <Link href={route('instructores.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isInstructoresActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
-                            Instructores
-                        </Link>
-                        <Link href={route('alumnos.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isAlumnosActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
-                            Alumnos
-                        </Link>
+                        {isAdmin && (
+                            <>
+                                <Link href={route('instructores.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isInstructoresActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
+                                    Instructores
+                                </Link>
+                                <Link href={route('alumnos.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isAlumnosActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
+                                    Alumnos
+                                </Link>
+                                <Link href={route('usuarios.index')} className={`block w-full ps-3 pr-4 py-2 border-l-4 text-left text-sm font-bold uppercase tracking-wider ${isUsuariosActive ? 'border-blue-400 bg-blue-500/10 text-blue-400' : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-700'}`}>
+                                    Usuarios
+                                </Link>
+                            </>
+                        )}
                     </div>
                     <div className="pt-4 pb-1 border-t border-gray-700">
                         <div className="px-4">
