@@ -45,6 +45,32 @@ class AccesoRolesTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_operador_no_puede_actualizar_instructor(): void
+    {
+        $operador = User::factory()->create(['role' => 'operador']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+
+        $this->actingAs($operador)->put(route('instructores.update', $instructor), [
+            'nombre' => 'T1 Editado',
+            'nombre_combate' => 'EDITADO',
+        ])->assertForbidden();
+    }
+
+    public function test_operador_no_puede_actualizar_alumno(): void
+    {
+        $operador = User::factory()->create(['role' => 'operador']);
+        $alumno = Alumno::create(['nombre' => 'T2 Base']);
+
+        $this->actingAs($operador)->put(route('alumnos.update', $alumno), [
+            'nombre' => 'T2 Editado',
+        ])->assertForbidden();
+    }
+
+    public function test_guest_es_redirigido_al_login_en_ruta_admin(): void
+    {
+        $this->get(route('usuarios.index'))->assertRedirect(route('login'));
+    }
+
     public function test_admin_puede_ver_y_crear_instructores(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);

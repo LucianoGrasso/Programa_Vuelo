@@ -29,6 +29,16 @@ class UserManagementTest extends TestCase
         ])->assertForbidden();
     }
 
+    public function test_operador_no_puede_actualizar_usuarios(): void
+    {
+        $operador = User::factory()->create(['role' => 'operador']);
+        $otro = User::factory()->create(['role' => 'operador']);
+
+        $this->actingAs($operador)->put(route('usuarios.update', $otro), [
+            'role' => 'admin',
+        ])->assertForbidden();
+    }
+
     public function test_admin_puede_ver_usuarios(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
