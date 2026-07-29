@@ -2,7 +2,7 @@ import Checkbox from '@/Components/Checkbox';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 
 export default function Login({ status }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -86,14 +86,7 @@ export default function Login({ status }) {
                 </div>
 
                 {/* Acciones y Botones Principales */}
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-700/60">
-                    <Link
-                        href={route('register')}
-                        className="text-sm font-medium text-blue-400 hover:text-blue-300 underline underline-offset-4 decoration-blue-500/50 hover:decoration-blue-400 transition-colors"
-                    >
-                        Crear nuevo usuario
-                    </Link>
-
+                <div className="flex items-center justify-end mt-6 pt-4 border-t border-gray-700/60">
                     <button
                         type="submit"
                         disabled={processing}
