@@ -4,6 +4,7 @@ use App\Http\Controllers\VueloController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InstructorController;
 use App\Http\Controllers\AlumnoController;
+use App\Http\Controllers\UserController;
 
 // Redirigir la raíz directamente a la pizarra.
 // Si el usuario no ha iniciado sesión, Laravel lo enviará automáticamente al Login.
@@ -32,6 +33,10 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/alumnos', [AlumnoController::class, 'index'])->name('alumnos.index');
     Route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
     Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
+
+    Route::get('/usuarios', [UserController::class, 'index'])->name('usuarios.index');
+    Route::post('/usuarios', [UserController::class, 'store'])->name('usuarios.store');
+    Route::put('/usuarios/{user}', [UserController::class, 'update'])->name('usuarios.update');
 });
 
 require __DIR__.'/auth.php';
