@@ -24,7 +24,6 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     const [activeTabNovedades, setActiveTabNovedades] = useState('instructores');
     const [isCustomZona, setIsCustomZona] = useState(false);
     const [isCustomMision, setIsCustomMision] = useState(false);
-    const [showCalificacionModal, setShowCalificacionModal] = useState(false);
     const [errorValidacion, setErrorValidacion] = useState('');
 
     const initAeronaves = (guardadasHoy, historico) => {
@@ -171,27 +170,17 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             return; // Bloquea el guardado
         }
 
-        // INTERCEPTOR: Si marca aterrizado y no está calificado, saltamos al modal secundario
-        if (formVuelo.data.estado_progreso === 'arribado' && (!formVuelo.data.calificacion || formVuelo.data.calificacion === 'pendiente')) {
-            setShowCalificacionModal(true);
-            return; 
-        }
         submitFinalPayload(formVuelo.data);
-    };
-
-    const submitWithCalificacion = (resultado) => {
-        const payload = { ...formVuelo.data, calificacion: resultado };
-        submitFinalPayload(payload);
     };
 
     const submitFinalPayload = (payload) => {
         if (editingVuelo) {
             router.put(route('pizarra.update', editingVuelo.id), payload, {
-                onSuccess: () => { formVuelo.reset(); setEditingVuelo(null); setIsModalOpen(false); setShowCalificacionModal(false); }
+                onSuccess: () => { formVuelo.reset(); setEditingVuelo(null); setIsModalOpen(false); }
             });
         } else {
             router.post(route('pizarra.store'), payload, {
-                onSuccess: () => { formVuelo.reset(); setIsModalOpen(false); setShowCalificacionModal(false); }
+                onSuccess: () => { formVuelo.reset(); setIsModalOpen(false); }
             });
         }
     };
@@ -758,28 +747,6 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                         </div>
                     )}
                 </div>
-                {/* MODAL SECUNDARIO: CALIFICACIÓN AL ATERRIZAR */}
-                    {showCalificacionModal && (
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-                            <div className="bg-gray-800 border border-gray-600 w-full max-w-sm rounded-xl shadow-2xl overflow-hidden flex flex-col text-center">
-                                <div className="p-6">
-                                    <h3 className="text-lg font-black text-white uppercase tracking-widest mb-2">Vuelo Finalizado</h3>
-                                    <p className="text-sm text-gray-400 mb-6">Para registrar la misión en la Matriz de Evaluaciones, indique el resultado del vuelo:</p>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button onClick={() => submitWithCalificacion('aprobado')} className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white font-black text-sm uppercase py-4 rounded-lg transition-all shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-                                            Aprobado
-                                        </button>
-                                        <button onClick={() => submitWithCalificacion('reprobado')} className="bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-500 hover:text-white font-black text-sm uppercase py-4 rounded-lg transition-all shadow-[0_0_15px_rgba(239,68,68,0.3)]">
-                                            Reprobado
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-900/50 p-4 border-t border-gray-700">
-                                    <button onClick={() => setShowCalificacionModal(false)} className="text-xs font-bold text-gray-400 hover:text-white uppercase tracking-wider">Cancelar y volver</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
             </div>
         </AuthenticatedLayout>
     );
