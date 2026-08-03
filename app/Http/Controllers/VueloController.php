@@ -31,9 +31,11 @@ class VueloController extends Controller
         $ultimaNovedad = \App\Models\NovedadDiaria::whereNotNull('aeronaves')->orderBy('fecha', 'desc')->first();
         $ultimoEstadoAeronaves = $ultimaNovedad ? $ultimaNovedad->aeronaves : null;
 
-        // NUEVO: Historial de Observaciones de Instructores para heredar de día a día
-        $ultimaNovedadInst = \App\Models\NovedadDiaria::whereNotNull('obs_instructores')->orderBy('fecha', 'desc')->first();
-        $ultimoEstadoInstructores = $ultimaNovedadInst ? $ultimaNovedadInst->obs_instructores : null;
+        // Historial de Observaciones (instructores y alumnos) para heredar de día a
+        // día: algunas observaciones valen para toda la semana, no queremos que se
+        // "vacíen" solas al pasar la medianoche.
+        $ultimoEstadoInstructores = $this->ultimoEstadoObservaciones('obs_instructores');
+        $ultimoEstadoAlumnos = $this->ultimoEstadoObservaciones('obs_alumnos');
 
         return inertia('Pizarra/Index', [
             'vuelos' => $vuelos,
@@ -44,8 +46,27 @@ class VueloController extends Controller
             'novedadHoy' => $novedadHoy,
             'novedadAyer' => $novedadAyer,
             'ultimoEstadoAeronaves' => $ultimoEstadoAeronaves,
-            'ultimoEstadoInstructores' => $ultimoEstadoInstructores // <- Pasamos el histórico a React
+            'ultimoEstadoInstructores' => $ultimoEstadoInstructores,
+            'ultimoEstadoAlumnos' => $ultimoEstadoAlumnos,
         ]);
+    }
+
+    /**
+     * Busca, para una columna de observaciones de NovedadDiaria (obs_instructores u
+     * obs_alumnos), el registro no vacío más reciente. No alcanza con que la columna
+     * no sea null: un día sin ninguna observación cargada igual guarda un array con
+     * "observacion" en null para cada persona, y no queremos que ese día en blanco
+     * tape la última observación real de un día anterior.
+     */
+    private function ultimoEstadoObservaciones(string $columna): ?array
+    {
+        $ultimaNovedad = \App\Models\NovedadDiaria::whereNotNull($columna)
+            ->orderBy('fecha', 'desc')
+            ->get(['fecha', $columna])
+            ->first(fn ($novedad) => collect($novedad->{$columna})
+                ->contains(fn ($obs) => filled($obs['observacion'] ?? null)));
+
+        return $ultimaNovedad?->{$columna};
     }
 
     public function store(Request $request)

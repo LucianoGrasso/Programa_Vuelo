@@ -16,7 +16,7 @@ const ETAPAS_CURSO = [
     { id: 'nocturno', nombre: 'Nocturno', misiones: ['N-1D', 'N-2D', 'N-3D', 'N-4DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] }
 ];
 
-export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy, novedadHoy, ultimoEstadoAeronaves }) {
+export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy, novedadHoy, ultimoEstadoAeronaves, ultimoEstadoInstructores, ultimoEstadoAlumnos }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isNovedadesModalOpen, setIsNovedadesModalOpen] = useState(false);
     const [editingVuelo, setEditingVuelo] = useState(null);
@@ -32,26 +32,36 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         return LISTA_AERONAVES.map(nombre => ({ nombre, estado: 'disponible', detalle: '' }));
     };
 
-    const initObsInstructores = (guardadas, listaInstructores) => {
-        const guardadasMap = Array.isArray(guardadas) 
-            ? guardadas.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {}) 
-            : {};
+    // El formulario de novedades se guarda entero (aeronaves + instructores +
+    // alumnos) cada vez, aunque solo se haya tocado una parte. Por eso, para
+    // decidir si "hoy" ya tiene datos propios de observaciones, no alcanza con
+    // que exista el array del día: puede existir pero con todo en blanco (se
+    // guardó el tablero por otro motivo). En ese caso seguimos heredando del
+    // último día con contenido real.
+    const tieneObservacionReal = (arr) => Array.isArray(arr) && arr.some(o => o?.observacion?.trim());
+
+    const initObsInstructores = (guardadasHoy, historico, listaInstructores) => {
+        const fuente = tieneObservacionReal(guardadasHoy)
+            ? guardadasHoy
+            : (Array.isArray(historico) ? historico : []);
+        const mapa = fuente.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {});
         return listaInstructores.map(inst => ({
             id: inst.id,
             // Priorizamos el nombre de combate, si no existe usamos el nombre normal
-            nombre: inst.nombre_combate || inst.nombre, 
-            observacion: guardadasMap[inst.id] || ''
+            nombre: inst.nombre_combate || inst.nombre,
+            observacion: mapa[inst.id] || ''
         }));
     };
 
-    const initObsAlumnos = (guardadas, listaAlumnos) => {
-        const guardadasMap = Array.isArray(guardadas) 
-            ? guardadas.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {}) 
-            : {};
+    const initObsAlumnos = (guardadasHoy, historico, listaAlumnos) => {
+        const fuente = tieneObservacionReal(guardadasHoy)
+            ? guardadasHoy
+            : (Array.isArray(historico) ? historico : []);
+        const mapa = fuente.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {});
         return listaAlumnos.map(alum => ({
             id: alum.id,
             nombre: alum.nombre,
-            observacion: guardadasMap[alum.id] || ''
+            observacion: mapa[alum.id] || ''
         }));
     };
 
@@ -69,8 +79,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
     const formNovedades = useForm({
         fecha: fechaHoy,
-        obs_instructores: initObsInstructores(novedadHoy?.obs_instructores, instructores), 
-        obs_alumnos: initObsAlumnos(novedadHoy?.obs_alumnos, alumnos),
+        obs_instructores: initObsInstructores(novedadHoy?.obs_instructores, ultimoEstadoInstructores, instructores),
+        obs_alumnos: initObsAlumnos(novedadHoy?.obs_alumnos, ultimoEstadoAlumnos, alumnos),
         aeronaves: initAeronaves(novedadHoy?.aeronaves, ultimoEstadoAeronaves),
         piloto_servicio: novedadHoy?.piloto_servicio || '',
         actividades: novedadHoy?.actividades || '',
@@ -80,8 +90,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         if (novedadHoy) {
             formNovedades.setData({
                 fecha: fechaHoy,
-                obs_instructores: initObsInstructores(novedadHoy.obs_instructores, instructores),
-                obs_alumnos: initObsAlumnos(novedadHoy.obs_alumnos, alumnos),
+                obs_instructores: initObsInstructores(novedadHoy.obs_instructores, ultimoEstadoInstructores, instructores),
+                obs_alumnos: initObsAlumnos(novedadHoy.obs_alumnos, ultimoEstadoAlumnos, alumnos),
                 aeronaves: initAeronaves(novedadHoy.aeronaves, ultimoEstadoAeronaves),
                 piloto_servicio: novedadHoy.piloto_servicio || '',
                 actividades: novedadHoy.actividades || '',
@@ -101,6 +111,13 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     const vuelosFuturos = vuelos.filter(v => v.fecha > fechaManana);
 
     const listaAeronavesHoy = initAeronaves(novedadHoy?.aeronaves, ultimoEstadoAeronaves);
+    // Lista de instructores activos con su observación (heredada de días previos si hoy
+    // no se cargó nada todavía) para el panel de solo lectura de Novedades del Día.
+    const instructoresNovedadHoy = initObsInstructores(novedadHoy?.obs_instructores, ultimoEstadoInstructores, instructores);
+    // A diferencia de instructores, acá solo mostramos a quien tiene una observación
+    // cargada (heredada o de hoy) — no a todos los alumnos activos.
+    const alumnosConObservacion = initObsAlumnos(novedadHoy?.obs_alumnos, ultimoEstadoAlumnos, alumnos)
+        .filter(obs => obs.observacion?.trim());
     const aeronavesDisponibles = listaAeronavesHoy.filter(aero => aero.estado === 'disponible');
 
     if (editingVuelo && !aeronavesDisponibles.some(a => a.nombre === editingVuelo.aeronave)) {
@@ -337,16 +354,20 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                 <div className="bg-gray-800/40 rounded-lg border border-gray-700 p-4 flex flex-col">
                                     <h4 className="text-[11px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-2 mb-4">Instructores</h4>
                                     <div className="flex flex-col gap-3 flex-grow">
-                                        {Array.isArray(novedadHoy?.obs_instructores) && novedadHoy.obs_instructores.filter(o => o?.observacion?.trim()).length > 0 ? (
-                                            novedadHoy.obs_instructores.filter(o => o?.observacion?.trim()).map((obs, idx) => (
-                                                <div key={idx} className="flex flex-col bg-gray-900/60 p-3 rounded-md border border-gray-700/50 shadow-sm">
+                                        {instructoresNovedadHoy.length > 0 ? (
+                                            instructoresNovedadHoy.map((obs) => (
+                                                <div key={obs.id} className="flex flex-col bg-gray-900/60 p-3 rounded-md border border-gray-700/50 shadow-sm">
                                                     <span className="text-[10px] font-bold text-blue-300 uppercase tracking-wider mb-1.5 border-b border-gray-800 pb-1">{obs.nombre}</span>
-                                                    <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{obs.observacion}</p>
+                                                    {obs.observacion?.trim() ? (
+                                                        <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{obs.observacion}</p>
+                                                    ) : (
+                                                        <p className="text-[11px] text-gray-500/70 italic">Sin novedades</p>
+                                                    )}
                                                 </div>
                                             ))
                                         ) : (
                                             <div className="flex items-center justify-center flex-grow min-h-[80px]">
-                                                <span className="text-gray-500/70 italic text-xs font-medium">Sin observaciones ingresadas</span>
+                                                <span className="text-gray-500/70 italic text-xs font-medium">No hay instructores activos</span>
                                             </div>
                                         )}
                                     </div>
@@ -356,9 +377,9 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                 <div className="bg-gray-800/40 rounded-lg border border-gray-700 p-4 flex flex-col">
                                     <h4 className="text-[11px] font-bold text-blue-400 uppercase border-b border-gray-700 pb-2 mb-4">Alumnos</h4>
                                     <div className="flex flex-col gap-3 flex-grow">
-                                        {Array.isArray(novedadHoy?.obs_alumnos) && novedadHoy.obs_alumnos.filter(o => o?.observacion?.trim()).length > 0 ? (
-                                            novedadHoy.obs_alumnos.filter(o => o?.observacion?.trim()).map((obs, idx) => (
-                                                <div key={idx} className="flex flex-col bg-gray-900/60 p-3 rounded-md border border-gray-700/50 shadow-sm">
+                                        {alumnosConObservacion.length > 0 ? (
+                                            alumnosConObservacion.map((obs) => (
+                                                <div key={obs.id} className="flex flex-col bg-gray-900/60 p-3 rounded-md border border-gray-700/50 shadow-sm">
                                                     <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider mb-1.5 border-b border-gray-800 pb-1">{obs.nombre}</span>
                                                     <p className="text-[11px] text-gray-300 leading-relaxed whitespace-pre-wrap break-words">{obs.observacion}</p>
                                                 </div>
