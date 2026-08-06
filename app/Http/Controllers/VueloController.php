@@ -149,8 +149,11 @@ class VueloController extends Controller
             ->orderBy('nombre')
             ->get();
 
+        $instructoresActivos = \App\Models\Instructor::where('activo', true)->orderBy('nombre')->get();
+
         return inertia('Pizarra/Evaluaciones', [
-            'alumnos' => $alumnos
+            'alumnos' => $alumnos,
+            'instructores' => $instructoresActivos,
         ]);
     }
 }

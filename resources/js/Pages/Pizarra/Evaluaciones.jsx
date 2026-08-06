@@ -52,10 +52,10 @@ const CeldaProgreso = ({ vuelo, onDoubleClick }) => {
     );
 };
 
-export default function Evaluaciones({ auth, alumnos }) {
+export default function Evaluaciones({ auth, alumnos, instructores }) {
     const [activeTab, setActiveTab] = useState(ETAPAS_CURSO[0].id);
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
-    
+
     // NUEVO ESTADO: Vuelo seleccionado para calificar con doble clic
     const [vueloEditandoCalificacion, setVueloEditandoCalificacion] = useState(null);
 
@@ -63,17 +63,12 @@ export default function Evaluaciones({ auth, alumnos }) {
 
     const formManual = useForm({
         fecha: new Date().toISOString().split('T')[0],
-        aeronave: 'NAVAL 211', 
+        aeronave: 'NAVAL 211',
         etd: '00:00', eta: '01:00',
         mision: '', instructor_id: '', alumno_id: '', nota: '',
         estado_progreso: 'arribado',
         calificacion: 'aprobado'
     });
-
-    const instructoresUnicos = [];
-    alumnos.forEach(a => a.vuelos.forEach(v => {
-        if(v.instructor && !instructoresUnicos.find(i => i.id === v.instructor.id)) instructoresUnicos.push(v.instructor);
-    }));
 
     const handleManualSubmit = (e) => {
         e.preventDefault();
@@ -240,7 +235,7 @@ export default function Evaluaciones({ auth, alumnos }) {
                                             <label className="block text-xs font-bold uppercase text-gray-300">Instructor</label>
                                             <select value={formManual.data.instructor_id} onChange={e => formManual.setData('instructor_id', e.target.value)} className={inputStyle} required>
                                                 <option value="" disabled>Seleccione Inst.</option>
-                                                {instructoresUnicos.map(inst => <option key={inst.id} value={inst.id}>{inst.nombre_combate || inst.nombre}</option>)}
+                                                {instructores.map(inst => <option key={inst.id} value={inst.id}>{inst.nombre_combate || inst.nombre}</option>)}
                                             </select>
                                         </div>
                                         <div className="col-span-2">
