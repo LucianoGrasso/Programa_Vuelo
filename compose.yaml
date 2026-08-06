@@ -6,6 +6,7 @@ services:
             args:
                 WWWGROUP: '${WWWGROUP}'
         image: 'sail-8.5/app'
+        restart: unless-stopped
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -25,6 +26,7 @@ services:
             - mysql
     phpmyadmin:
         image: 'phpmyadmin/phpmyadmin'
+        restart: unless-stopped
         ports:
             - 8080:80
         environment:
@@ -35,6 +37,7 @@ services:
             - mysql
     mysql:
         image: 'mysql:8.4'
+        restart: unless-stopped
         ports:
             - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
