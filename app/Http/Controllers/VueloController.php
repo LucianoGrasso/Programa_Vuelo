@@ -156,4 +156,50 @@ class VueloController extends Controller
             'instructores' => $instructoresActivos,
         ]);
     }
+
+    public function cargaRapida()
+    {
+        return inertia('Pizarra/CargaRapida', [
+            'alumnos' => \App\Models\Alumno::orderBy('nombre')->get(),
+            'instructores' => \App\Models\Instructor::orderBy('nombre')->get(),
+        ]);
+    }
+
+    /**
+     * Carga en lote de vuelos ya volados (ej. traspaso de un pizarrón físico).
+     * No pasa por los campos operativos del vuelo del día (aeronave/etd/eta): esos
+     * datos no se registraron en su momento, así que se completan con un valor
+     * fijo, igual que ya hace el modal de "Ingreso Manual de Evaluación".
+     */
+    public function storeBulk(Request $request)
+    {
+        $validated = $request->validate([
+            'vuelos' => 'required|array|min:1',
+            'vuelos.*.fecha' => 'required|date',
+            'vuelos.*.mision' => 'required|string|max:255',
+            'vuelos.*.instructor_id' => 'required|exists:instructores,id',
+            'vuelos.*.alumno_id' => 'required|exists:alumnos,id',
+            'vuelos.*.nota' => 'nullable|string|max:255',
+            'vuelos.*.calificacion' => 'required|string|in:pendiente,aprobado,reprobado',
+        ]);
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+            foreach ($validated['vuelos'] as $fila) {
+                Vuelo::create([
+                    'fecha' => $fila['fecha'],
+                    'aeronave' => 'NAVAL 211',
+                    'etd' => '00:00',
+                    'eta' => '01:00',
+                    'mision' => $fila['mision'],
+                    'instructor_id' => $fila['instructor_id'],
+                    'alumno_id' => $fila['alumno_id'],
+                    'nota' => $fila['nota'] ?? null,
+                    'estado_progreso' => 'arribado',
+                    'calificacion' => $fila['calificacion'],
+                ]);
+            }
+        });
+
+        return redirect()->back();
+    }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 
 const ETAPAS_CURSO = [
     { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
@@ -102,9 +102,14 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
                             <h1 className="text-2xl font-bold tracking-wider text-white uppercase">Progresión de Vuelo</h1>
                             <p className="text-sm text-gray-400 mt-1">Matriz de evaluaciones por etapa y alumno</p>
                         </div>
-                        <button onClick={() => setIsManualModalOpen(true)} className="bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-md transition-all active:scale-95 shadow-lg">
-                            + Agregar Evaluación Manual
-                        </button>
+                        <div className="flex gap-3">
+                            <Link href={route('pizarra.cargaRapida')} className="bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-md transition-all active:scale-95 shadow-lg inline-flex items-center">
+                                Carga Rápida por Alumno
+                            </Link>
+                            <button onClick={() => setIsManualModalOpen(true)} className="bg-gray-800 border border-gray-700 hover:bg-gray-700 text-gray-200 font-bold text-xs uppercase tracking-wider py-2.5 px-4 rounded-md transition-all active:scale-95 shadow-lg">
+                                + Agregar Evaluación Manual
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex overflow-x-auto border-b border-gray-800 custom-scrollbar pb-1">

@@ -22,6 +22,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/historial', [VueloController::class, 'historial'])->name('pizarra.historial');
 
     Route::get('/evaluaciones', [VueloController::class, 'evaluaciones'])->name('pizarra.evaluaciones');
+
+    Route::get('/evaluaciones/carga-rapida', [VueloController::class, 'cargaRapida'])->name('pizarra.cargaRapida');
+    Route::post('/evaluaciones/carga-rapida', [VueloController::class, 'storeBulk'])->name('pizarra.storeBulk');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
