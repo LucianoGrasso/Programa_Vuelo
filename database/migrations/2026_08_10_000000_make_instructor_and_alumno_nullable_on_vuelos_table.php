@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('vuelos', function (Blueprint $table) {
+            // Vuelo solo: el alumno o el instructor pueden volar sin el otro
+            // (ej. FTR de una aeronave recién salida de mantención, o el
+            // primer solo de un alumno).
+            $table->foreignId('instructor_id')->nullable()->change();
+            $table->foreignId('alumno_id')->nullable()->change();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('vuelos', function (Blueprint $table) {
+            $table->foreignId('instructor_id')->nullable(false)->change();
+            $table->foreignId('alumno_id')->nullable(false)->change();
+        });
+    }
+};

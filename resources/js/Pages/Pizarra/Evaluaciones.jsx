@@ -3,7 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 
 const ETAPAS_CURSO = [
-    { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'PS-17S', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'precision', nombre: 'Precisión', misiones: ['SP-1D', 'P-1D', 'P-2S', 'P-3D', 'P-4S', 'P-5D', 'P-6S', 'P-7D', 'P-8S', 'P-9D', 'P-10S', 'P-11D', 'P-12DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'acrobacias', nombre: 'Acrobacias', misiones: ['A-1D', 'A-2D', 'A-3D', 'A-4S', 'A-5D', 'A-6S', 'A-7D', 'A-8S', 'A-9D', 'A-10DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'navegacion', nombre: 'Navegación', misiones: ['SNV-1D', 'NV-1D', 'NV-2D', 'NV-3D', 'NV-4D', 'NV-5D', 'NV-6DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
@@ -35,7 +35,7 @@ const CeldaProgreso = ({ vuelo, onDoubleClick }) => {
         <div 
             onDoubleClick={() => onDoubleClick(vuelo)}
             className={`relative w-[52px] h-[52px] bg-gray-800 border ${borderColor} flex items-center justify-center font-mono text-[10px] font-bold mx-auto transition-transform hover:scale-110 cursor-pointer select-none hover:ring-2 ring-white/20`}
-            title="Doble clic para calificar"
+            title="Doble clic para editar"
         >
             {/* SVG para trazar la X diagonal perfecta de esquina a esquina */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
@@ -56,10 +56,24 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
     const [activeTab, setActiveTab] = useState(ETAPAS_CURSO[0].id);
     const [isManualModalOpen, setIsManualModalOpen] = useState(false);
 
-    // NUEVO ESTADO: Vuelo seleccionado para calificar con doble clic
-    const [vueloEditandoCalificacion, setVueloEditandoCalificacion] = useState(null);
+    // Vuelo seleccionado con doble clic (para editar o eliminar) y sus campos editables.
+    const [vueloEditando, setVueloEditando] = useState(null);
+    const [edicion, setEdicion] = useState({ fecha: '', nota: '', instructor_id: '', mision: '', calificacion: '' });
+    const [errorEdicion, setErrorEdicion] = useState('');
 
     const etapaActual = ETAPAS_CURSO.find(e => e.id === activeTab);
+
+    const abrirEdicion = (vuelo) => {
+        setVueloEditando(vuelo);
+        setErrorEdicion('');
+        setEdicion({
+            fecha: vuelo.fecha,
+            nota: vuelo.nota || '',
+            instructor_id: vuelo.instructor_id || '',
+            mision: vuelo.mision,
+            calificacion: vuelo.calificacion || 'pendiente',
+        });
+    };
 
     const formManual = useForm({
         fecha: new Date().toISOString().split('T')[0],
@@ -72,21 +86,42 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
 
     const handleManualSubmit = (e) => {
         e.preventDefault();
-        router.post(route('pizarra.store'), formManual.data, {
+        // Importante: usar formManual.post (no router.post) para que los errores de
+        // validación del servidor (ej. misión duplicada) lleguen a formManual.errors.
+        formManual.post(route('pizarra.store'), {
             onSuccess: () => { formManual.reset('mision', 'instructor_id', 'alumno_id', 'nota'); setIsManualModalOpen(false); }
         });
     };
 
-    // NUEVA FUNCIÓN: Actualizar calificación rápida
-    const handleActualizarCalificacion = (nuevaCalificacion) => {
-        if (!vueloEditandoCalificacion) return;
-        
-        router.put(route('pizarra.update', vueloEditandoCalificacion.id), {
-            ...vueloEditandoCalificacion,
-            calificacion: nuevaCalificacion
+    const handleGuardarEdicion = (e) => {
+        e.preventDefault();
+        if (!vueloEditando) return;
+        setErrorEdicion('');
+
+        // El alumno solo puede volar sin instructor en una misión designada como
+        // "solo" en el syllabus (código terminado en S, ej. PS-17S, P-2S, A-4S).
+        if (!edicion.instructor_id && !edicion.mision.toUpperCase().endsWith('S')) {
+            setErrorEdicion('INCONGRUENCIA: Sin instructor asignado, esta misión no puede quedar como vuelo solo (el código no termina en "S"). Asigná un instructor.');
+            return;
+        }
+
+        router.put(route('pizarra.update', vueloEditando.id), {
+            ...vueloEditando,
+            ...edicion,
         }, {
-            preserveScroll: true, // Evita que la página salte al inicio
-            onSuccess: () => setVueloEditandoCalificacion(null)
+            preserveScroll: true,
+            onSuccess: () => setVueloEditando(null),
+            onError: (errors) => setErrorEdicion(Object.values(errors)[0] || 'No se pudo guardar el vuelo.')
+        });
+    };
+
+    const handleEliminarVuelo = () => {
+        if (!vueloEditando) return;
+        if (!confirm(`¿Seguro que querés eliminar el vuelo "${vueloEditando.mision}"? Esta acción no se puede deshacer.`)) return;
+
+        router.delete(route('pizarra.destroy', vueloEditando.id), {
+            preserveScroll: true,
+            onSuccess: () => setVueloEditando(null)
         });
     };
 
@@ -161,7 +196,7 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
                                                 return (
                                                     <td key={mision} className="px-1 py-2 whitespace-nowrap text-center border-r border-gray-700/30 last:border-0">
                                                         {/* Pasamos la función de doble clic a la celda */}
-                                                        <CeldaProgreso vuelo={vueloAsignado} onDoubleClick={setVueloEditandoCalificacion} />
+                                                        <CeldaProgreso vuelo={vueloAsignado} onDoubleClick={abrirEdicion} />
                                                     </td>
                                                 );
                                             })}
@@ -191,28 +226,74 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
                         </div>
                     </div>
 
-                    {/* NUEVO MODAL RÁPIDO: DOBLE CLIC PARA CALIFICAR */}
-                    {vueloEditandoCalificacion && (
+                    {/* MODAL: EDITAR VUELO (doble clic en una celda) */}
+                    {vueloEditando && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-fade-in">
-                            <div className="bg-gray-800 border border-gray-600 w-full max-w-sm rounded-xl shadow-2xl overflow-hidden flex flex-col text-center">
-                                <div className="p-6">
-                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">Calificación Rápida</h3>
-                                    <p className="text-lg font-black text-white uppercase mb-6">{vueloEditandoCalificacion.mision}</p>
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <button onClick={() => handleActualizarCalificacion('aprobado')} className="bg-blue-600/20 hover:bg-blue-600 border border-blue-500 text-blue-400 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all shadow-[0_0_10px_rgba(59,130,246,0.2)]">
-                                            Aprobado (Azul)
-                                        </button>
-                                        <button onClick={() => handleActualizarCalificacion('reprobado')} className="bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-500 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all shadow-[0_0_10px_rgba(239,68,68,0.2)]">
-                                            Reprobado (Rojo)
-                                        </button>
-                                        <button onClick={() => handleActualizarCalificacion('pendiente')} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-500 text-gray-300 hover:text-white font-black text-xs uppercase py-3 rounded-lg transition-all">
-                                            Dejar en Blanco (Pendiente)
-                                        </button>
+                            <div className="bg-gray-800 border border-gray-600 w-full max-w-md rounded-xl shadow-2xl overflow-hidden flex flex-col">
+                                <div className="px-6 py-4 bg-gray-900/50 border-b border-gray-700 flex justify-between items-center">
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Editar Vuelo — {vueloEditando.alumno?.nombre}</h3>
+                                    <button onClick={() => setVueloEditando(null)} className="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+                                </div>
+                                <form onSubmit={handleGuardarEdicion} className="p-6 space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase text-gray-300">Fecha</label>
+                                            <input type="date" value={edicion.fecha} onChange={e => setEdicion({ ...edicion, fecha: e.target.value })} className={inputStyle} required style={{ colorScheme: 'dark' }} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold uppercase text-gray-300">Zona de Vuelo</label>
+                                            <select value={edicion.nota} onChange={e => setEdicion({ ...edicion, nota: e.target.value })} className={inputStyle}>
+                                                <option value="">Sin zona</option>
+                                                <option value="R-1">R-1</option>
+                                                <option value="R-35">R-35</option>
+                                                <option value="R-67">R-67</option>
+                                            </select>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-bold uppercase text-blue-400">Código de Misión</label>
+                                            <p className={`${inputStyle} border-blue-500/50 bg-gray-900/60 text-gray-300 font-bold`}>{edicion.mision}</p>
+                                            <p className="text-[9px] text-gray-500 mt-1">El código de misión no se puede cambiar: define en qué columna de la matriz va esta evaluación.</p>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-bold uppercase text-gray-300">Instructor</label>
+                                            <select value={edicion.instructor_id} onChange={e => setEdicion({ ...edicion, instructor_id: e.target.value })} className={inputStyle}>
+                                                <option value="" className="text-yellow-400">— Vuelo Solo (sin instructor) —</option>
+                                                {instructores.map(inst => <option key={inst.id} value={inst.id}>{inst.nombre_combate || inst.nombre}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-xs font-bold uppercase text-gray-300 mb-2">Calificación del Vuelo</label>
+                                            <div className="flex gap-4">
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" name="calificacion_edicion" value="aprobado" checked={edicion.calificacion === 'aprobado'} onChange={e => setEdicion({ ...edicion, calificacion: e.target.value })} className="text-blue-500 focus:ring-blue-500" />
+                                                    <span className="text-sm text-gray-300 font-bold">Aprobado</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" name="calificacion_edicion" value="reprobado" checked={edicion.calificacion === 'reprobado'} onChange={e => setEdicion({ ...edicion, calificacion: e.target.value })} className="text-red-500 focus:ring-red-500" />
+                                                    <span className="text-sm text-gray-300 font-bold">Reprobado</span>
+                                                </label>
+                                                <label className="flex items-center gap-2 cursor-pointer">
+                                                    <input type="radio" name="calificacion_edicion" value="pendiente" checked={edicion.calificacion === 'pendiente'} onChange={e => setEdicion({ ...edicion, calificacion: e.target.value })} className="text-gray-400 focus:ring-gray-500" />
+                                                    <span className="text-sm text-gray-300 font-bold">Pendiente</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="bg-gray-900/50 p-4 border-t border-gray-700">
-                                    <button onClick={() => setVueloEditandoCalificacion(null)} className="text-xs font-bold text-gray-500 hover:text-white uppercase tracking-wider">Cancelar</button>
-                                </div>
+                                    {errorEdicion && (
+                                        <div className="bg-red-500/10 border border-red-500/50 rounded-md p-3">
+                                            <p className="text-red-400 text-xs font-bold text-center tracking-wide">{errorEdicion}</p>
+                                        </div>
+                                    )}
+                                    <div className="flex justify-between items-center pt-4 border-t border-gray-700/60 mt-4">
+                                        <button type="button" onClick={handleEliminarVuelo} className="text-xs font-bold text-red-500 hover:text-red-400 uppercase tracking-wider">
+                                            Eliminar Vuelo
+                                        </button>
+                                        <div className="flex gap-3">
+                                            <button type="button" onClick={() => setVueloEditando(null)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancelar</button>
+                                            <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase py-2 px-5 rounded-md shadow-lg">Guardar Cambios</button>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     )}
@@ -250,6 +331,7 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
                                                 {etapaActual.misiones.map(mision => <option key={mision} value={mision}>{mision}</option>)}
                                             </select>
                                             <p className="text-[9px] text-gray-500 mt-1">Este código ubicará la cruz en la columna correcta.</p>
+                                            {formManual.errors.mision && <p className="text-red-400 text-xs mt-1 font-bold">{formManual.errors.mision}</p>}
                                         </div>
                                         <div className="col-span-2">
                                             <label className="block text-xs font-bold uppercase text-gray-300 mb-2">Calificación del Vuelo</label>

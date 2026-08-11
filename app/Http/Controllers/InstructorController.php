@@ -9,8 +9,10 @@ class InstructorController extends Controller
 {
     public function index()
     {
-        // Añadimos withCount('vuelos') para que cuente las misiones asignadas
-        $instructores = Instructor::withCount('vuelos')->orderBy('nombre')->get();
+        // Añadimos withCount('vuelos') para que cuente las misiones asignadas.
+        // Orden por antigüedad (número de escalafón), no alfabético: el número 1
+        // va arriba; los que no tienen número asignado quedan al final.
+        $instructores = Instructor::withCount('vuelos')->orderByRaw('numero IS NULL, numero ASC')->get();
         
         return inertia('Dotacion/Instructores', [
             'instructores' => $instructores

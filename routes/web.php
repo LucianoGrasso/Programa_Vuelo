@@ -16,6 +16,7 @@ Route::middleware('auth')->group(function () {
     // Rutas operativas: accesibles para admin y operador.
     Route::get('/pizarra', [VueloController::class, 'index'])->name('pizarra.index');
     Route::put('/pizarra/{vuelo}', [VueloController::class, 'update'])->name('pizarra.update');
+    Route::delete('/pizarra/{vuelo}', [VueloController::class, 'destroy'])->name('pizarra.destroy');
     Route::post('/pizarra', [VueloController::class, 'store'])->name('pizarra.store');
     Route::post('/pizarra/novedades', [VueloController::class, 'storeNovedades'])->name('pizarra.novedades');
 
@@ -25,6 +26,10 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/evaluaciones/carga-rapida', [VueloController::class, 'cargaRapida'])->name('pizarra.cargaRapida');
     Route::post('/evaluaciones/carga-rapida', [VueloController::class, 'storeBulk'])->name('pizarra.storeBulk');
+
+    // El operador puede ver la lista de alumnos (para el aviso de vencimiento),
+    // pero no crear, editar ni desactivar: eso sigue siendo solo de admin, abajo.
+    Route::get('/alumnos', [AlumnoController::class, 'index'])->name('alumnos.index');
 });
 
 Route::middleware(['auth', 'admin'])->group(function () {
@@ -33,7 +38,6 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::post('/instructores', [InstructorController::class, 'store'])->name('instructores.store');
     Route::put('/instructores/{instructor}', [InstructorController::class, 'update'])->name('instructores.update');
 
-    Route::get('/alumnos', [AlumnoController::class, 'index'])->name('alumnos.index');
     Route::post('/alumnos', [AlumnoController::class, 'store'])->name('alumnos.store');
     Route::put('/alumnos/{alumno}', [AlumnoController::class, 'update'])->name('alumnos.update');
 

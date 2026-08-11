@@ -6,7 +6,7 @@ import { Head, useForm, router } from '@inertiajs/react'; // Asegura que 'router
 const LISTA_AERONAVES = ['NAVAL 211', 'NAVAL 212', 'NAVAL 213', 'NAVAL 215', 'NAVAL 216', 'NAVAL 217', 'NAVAL 219'];
 
 const ETAPAS_CURSO = [
-    { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
+    { id: 'pre_solo', nombre: 'Pre Solo', misiones: ['SPS-1D', 'PS-1D', 'SPS-2D', 'PS-2D', 'PS-3D', 'SPS-3D', 'PS-4D', 'PS-5D', 'SPS-4D', 'PS-6D', 'PS-7D', 'PS-8D', 'PS-9D', 'SPS-5D', 'PS-10D', 'PS-11D', 'PS-12D', 'PS-13D', 'PS-14D', 'PS-15D', 'PS-16D', 'PS-17DX', 'PS-17S', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'precision', nombre: 'Precisión', misiones: ['SP-1D', 'P-1D', 'P-2S', 'P-3D', 'P-4S', 'P-5D', 'P-6S', 'P-7D', 'P-8S', 'P-9D', 'P-10S', 'P-11D', 'P-12DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'acrobacias', nombre: 'Acrobacias', misiones: ['A-1D', 'A-2D', 'A-3D', 'A-4S', 'A-5D', 'A-6S', 'A-7D', 'A-8S', 'A-9D', 'A-10DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
     { id: 'navegacion', nombre: 'Navegación', misiones: ['SNV-1D', 'NV-1D', 'NV-2D', 'NV-3D', 'NV-4D', 'NV-5D', 'NV-6DX', 'EX REP 1', 'EX REP 2', 'EX REP 3', 'EX REP 4'] },
@@ -72,6 +72,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         eta: '',
         mision: '',
         instructor_id: '',
+        instructor_validador_id: '',
         alumno_id: '',
         nota: '',
         estado_progreso: 'programado'
@@ -118,11 +119,11 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     // cargada (heredada o de hoy) — no a todos los alumnos activos.
     const alumnosConObservacion = initObsAlumnos(novedadHoy?.obs_alumnos, ultimoEstadoAlumnos, alumnos)
         .filter(obs => obs.observacion?.trim());
-    const aeronavesDisponibles = listaAeronavesHoy.filter(aero => aero.estado === 'disponible');
-
-    if (editingVuelo && !aeronavesDisponibles.some(a => a.nombre === editingVuelo.aeronave)) {
-        aeronavesDisponibles.unshift({ nombre: editingVuelo.aeronave, estado: 'baja' });
-    }
+    // Mostramos todas las aeronaves, incluidas las de baja: un instructor tiene
+    // que poder seleccionar una aeronave de baja para hacerle el vuelo de FTR
+    // que la vuelve a poner disponible (si la ocultáramos, nunca se podría volar
+    // ese FTR).
+    const aeronavesDisponibles = listaAeronavesHoy;
 
     const formatearFechaTablero = (fechaString) => {
         if (!fechaString) return '';
@@ -133,7 +134,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
     const openCreateModal = () => {
         setEditingVuelo(null);
-        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'alumno_id', 'nota', 'estado_progreso');
+        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_validador_id', 'alumno_id', 'nota', 'estado_progreso');
         formVuelo.setData('fecha', fechaHoy);
         setIsCustomZona(false);
         setErrorValidacion('');
@@ -149,6 +150,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             eta: vuelo.eta.substring(0, 5),
             mision: vuelo.mision,
             instructor_id: vuelo.instructor_id,
+            instructor_validador_id: vuelo.instructor_validador_id,
             alumno_id: vuelo.alumno_id,
             nota: vuelo.nota || '',
             estado_progreso: vuelo.estado_progreso || 'programado',
@@ -159,7 +161,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
         // NUEVA LÍNEA PARA LA MISIÓN
         const misionActual = vuelo.mision || '';
-        const esMisionSyllabus = ETAPAS_CURSO.some(etapa => etapa.misiones.includes(misionActual));
+        const esMisionSyllabus = misionActual === 'FTR' || ETAPAS_CURSO.some(etapa => etapa.misiones.includes(misionActual));
         setIsCustomMision(!esMisionSyllabus && misionActual !== '');
         
         setErrorValidacion('');
@@ -187,17 +189,38 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             return; // Bloquea el guardado
         }
 
+        // Puede volar solo el alumno o solo el instructor (vuelo solo / FTR), pero no
+        // pueden faltar los dos a la vez.
+        if (!formVuelo.data.instructor_id && !formVuelo.data.alumno_id) {
+            setErrorValidacion('Falta asignar instructor o alumno: un vuelo solo necesita al menos uno de los dos.');
+            return;
+        }
+
+        // El alumno solo puede volar sin instructor en una misión designada como
+        // "solo" en el syllabus (código terminado en S, ej. PS-17S, P-2S, A-4S).
+        if (!formVuelo.data.instructor_id && formVuelo.data.alumno_id && !mision.endsWith('S')) {
+            setErrorValidacion('INCONGRUENCIA: Sin instructor asignado, solo se puede registrar una misión de tipo solo (código terminado en "S"). Asigne un instructor o cambie el código de misión.');
+            return;
+        }
+
         submitFinalPayload(formVuelo.data);
     };
 
     const submitFinalPayload = (payload) => {
+        // El servidor valida cosas que acá no podemos saber sin ir a la base
+        // (ej. código de misión duplicado para ese alumno); si rechaza, mostramos
+        // el motivo en el mismo cartel de INCONGRUENCIA en vez de fallar en silencio.
+        const onError = (errors) => setErrorValidacion(Object.values(errors)[0] || 'No se pudo guardar el vuelo.');
+
         if (editingVuelo) {
             router.put(route('pizarra.update', editingVuelo.id), payload, {
-                onSuccess: () => { formVuelo.reset(); setEditingVuelo(null); setIsModalOpen(false); }
+                onSuccess: () => { formVuelo.reset(); setEditingVuelo(null); setIsModalOpen(false); },
+                onError
             });
         } else {
             router.post(route('pizarra.store'), payload, {
-                onSuccess: () => { formVuelo.reset(); setIsModalOpen(false); }
+                onSuccess: () => { formVuelo.reset(); setIsModalOpen(false); },
+                onError
             });
         }
     };
@@ -281,6 +304,11 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                     </span> / <span className="text-gray-400">
                                         {vuelo.alumno?.nombre || 'S/A'}
                                     </span>
+                                    {vuelo.instructor_validador && (
+                                        <div className="text-[10px] text-purple-400 font-bold mt-0.5">
+                                            Validado por {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}
+                                        </div>
+                                    )}
                                 </td>
                                 <td className="px-2 py-3 whitespace-nowrap text-xs font-bold text-green-400">{vuelo.nota || '-'}</td>
                                 <td className="px-2 py-3 whitespace-nowrap text-xs">
@@ -486,8 +514,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                 <option value="" disabled className="text-gray-600">Seleccione Aeronave</option>
                                                 <option value="SIM" className="text-blue-400 font-black bg-gray-900">SIMULADOR (SIM)</option>
                                                 {aeronavesDisponibles.map((aero, idx) => (
-                                                    <option key={idx} value={aero.nombre} className="text-white">
-                                                        {aero.nombre} {aero.estado === 'baja' ? '(ACTUAL - DE BAJA)' : ''}
+                                                    <option key={idx} value={aero.nombre} className={aero.estado === 'baja' ? 'text-red-400' : 'text-white'}>
+                                                        {aero.nombre} {aero.estado === 'baja' ? '(DE BAJA - Solo FTR)' : ''}
                                                     </option>
                                                 ))}
                                             </select>
@@ -525,7 +553,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                     required
                                                 >
                                                     <option value="" disabled className="text-gray-600">Seleccione Misión</option>
-                                                    
+                                                    <option value="FTR" className="text-purple-400 font-black bg-gray-900">FTR (validación post-mantención)</option>
+
                                                     {ETAPAS_CURSO.map((etapa) => (
                                                         <optgroup key={etapa.id} label={`--- ${etapa.nombre.toUpperCase()} ---`} className="bg-gray-900 text-blue-400 font-bold">
                                                             {etapa.misiones.map(m => (
@@ -562,21 +591,33 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                             <div className="sm:col-span-2 text-[11px] font-bold uppercase tracking-widest text-blue-400 border-b border-gray-700/50 pb-1">Dotación de Vuelo</div>
                                             <div>
                                                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Instructor</label>
-                                                <select value={formVuelo.data.instructor_id} onChange={e => formVuelo.setData('instructor_id', e.target.value)} className={inputStyle} required>
-                                                    <option value="" disabled className="text-gray-600">Seleccione Instructor</option>
+                                                <select value={formVuelo.data.instructor_id} onChange={e => formVuelo.setData('instructor_id', e.target.value)} className={inputStyle}>
+                                                    <option value="" className="text-yellow-400">— Vuelo Solo (sin instructor) —</option>
                                                     {instructores.map(inst => (
                                                         <option key={inst.id} value={inst.id} className="text-white">
                                                             {inst.nombre_combate || inst.nombre}
                                                         </option>
                                                     ))}
-                                                </select>   
+                                                </select>
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Alumno</label>
-                                                <select value={formVuelo.data.alumno_id} onChange={e => formVuelo.setData('alumno_id', e.target.value)} className={inputStyle} required>
-                                                    <option value="" disabled className="text-gray-600">Seleccione Alumno</option>
+                                                <select value={formVuelo.data.alumno_id} onChange={e => formVuelo.setData('alumno_id', e.target.value)} className={inputStyle}>
+                                                    <option value="" className="text-yellow-400">— Vuelo Solo (sin alumno) —</option>
                                                     {alumnos.map(alum => (<option key={alum.id} value={alum.id} className="text-white">{alum.nombre}</option>))}
                                                 </select>
+                                            </div>
+                                            <div className="sm:col-span-2">
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-purple-400">Instructor Validador (habilitación, opcional)</label>
+                                                <select value={formVuelo.data.instructor_validador_id} onChange={e => formVuelo.setData('instructor_validador_id', e.target.value)} className={inputStyle}>
+                                                    <option value="" className="text-gray-500">— No aplica —</option>
+                                                    {instructores.filter(inst => String(inst.id) !== String(formVuelo.data.instructor_id)).map(inst => (
+                                                        <option key={inst.id} value={inst.id} className="text-white">
+                                                            {inst.nombre_combate || inst.nombre}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <p className="text-[10px] text-gray-500 mt-1">Usar solo cuando este vuelo es una habilitación: el Instructor de arriba está siendo evaluado por este instructor validador.</p>
                                             </div>
                                         </div>
                                         <div className="sm:col-span-2">

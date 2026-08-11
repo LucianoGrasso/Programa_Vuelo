@@ -29,11 +29,14 @@ class AccesoRolesTest extends TestCase
         ])->assertForbidden();
     }
 
-    public function test_operador_no_puede_ver_alumnos(): void
+    public function test_operador_puede_ver_alumnos(): void
     {
+        // Puede ver la lista (para el aviso de vencimiento por días sin volar),
+        // aunque no pueda crear ni editar/desactivar — eso lo cubren los tests
+        // de abajo (test_operador_no_puede_crear_alumno / actualizar_alumno).
         $operador = User::factory()->create(['role' => 'operador']);
 
-        $this->actingAs($operador)->get(route('alumnos.index'))->assertForbidden();
+        $this->actingAs($operador)->get(route('alumnos.index'))->assertOk();
     }
 
     public function test_operador_no_puede_crear_alumno(): void

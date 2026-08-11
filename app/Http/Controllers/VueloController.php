@@ -10,18 +10,60 @@ use Illuminate\Http\Request;
 
 class VueloController extends Controller
 {
+    /**
+     * Cuando el alumno vuela solo (sin instructor), la misión tiene que ser una
+     * de las designadas como "solo" en el syllabus (código terminado en "S", ej.
+     * PS-17S, P-2S, A-4S) — no cualquier misión que normalmente exige instructor.
+     */
+    private function reglaMisionSolo(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            $esVueloSoloDeAlumno = empty($request->input('instructor_id')) && filled($request->input('alumno_id'));
+
+            if ($esVueloSoloDeAlumno && !str_ends_with(strtoupper($value), 'S')) {
+                $fail('Un vuelo solo (alumno sin instructor) solo se puede registrar en una misión de tipo solo (código terminado en "S").');
+            }
+        };
+    }
+
+    /**
+     * Un alumno no puede tener dos vuelos con el mismo código de misión: los
+     * códigos EX REP 1-4 son justamente los que existen para repetir, así que
+     * quedan afuera de esta regla. $vueloIdActual se excluye para permitir
+     * guardar una edición sin que choque contra sí mismo.
+     */
+    private function reglaMisionDuplicada(Request $request, ?int $vueloIdActual = null): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request, $vueloIdActual) {
+            $alumnoId = $request->input('alumno_id');
+
+            if (!$alumnoId || str_starts_with(strtoupper(trim($value)), 'EX REP')) {
+                return;
+            }
+
+            $existe = Vuelo::where('alumno_id', $alumnoId)
+                ->whereRaw('UPPER(mision) = ?', [strtoupper($value)])
+                ->when($vueloIdActual, fn ($query) => $query->where('id', '!=', $vueloIdActual))
+                ->exists();
+
+            if ($existe) {
+                $fail("Este alumno ya tiene un vuelo registrado con el código \"{$value}\". Si es una repetición, usá un código EX REP.");
+            }
+        };
+    }
+
     public function index()
     {
         $hoy = now()->toDateString();
         $ayer = now()->subDay()->toDateString();
 
-        $vuelos = \App\Models\Vuelo::with(['instructor', 'alumno'])
+        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorValidador', 'alumno'])
                        ->where('fecha', '>=', $ayer)
                        ->orderBy('fecha', 'asc')
                        ->orderBy('etd', 'asc')
                        ->get();
 
-        $instructoresActivos = \App\Models\Instructor::where('activo', true)->orderBy('nombre')->get();
+        $instructoresActivos = \App\Models\Instructor::where('activo', true)->orderByRaw('numero IS NULL, numero ASC')->get();
         $alumnosActivos = \App\Models\Alumno::where('activo', true)->orderBy('nombre')->get();
 
         $novedadHoy = \App\Models\NovedadDiaria::where('fecha', $hoy)->first();
@@ -76,10 +118,14 @@ class VueloController extends Controller
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => 'required|string',
-            'mision' => 'required|string|max:255',
-            // NUEVAS REGLAS RELACIONALES:
-            'instructor_id' => 'required|exists:instructores,id',
-            'alumno_id' => 'required|exists:alumnos,id',
+            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request)],
+            // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
+            // instructor sin alumno (FTR de una aeronave saliendo de mantención),
+            // pero no puede faltar los dos a la vez.
+            'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
+            // Vuelo de habilitación: un instructor senior valida a otro (sin alumno).
+            'instructor_validador_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
             'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
@@ -96,16 +142,25 @@ class VueloController extends Controller
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => 'required|string',
-            'mision' => 'required|string|max:255',
-            // NUEVAS REGLAS RELACIONALES:
-            'instructor_id' => 'required|exists:instructores,id',
-            'alumno_id' => 'required|exists:alumnos,id',
+            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id)],
+            // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
+            // instructor sin alumno (FTR de una aeronave saliendo de mantención),
+            // pero no puede faltar los dos a la vez.
+            'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
+            'instructor_validador_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
             'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
         ]);
 
         $vuelo->update($validated);
+        return redirect()->back();
+    }
+
+    public function destroy(Vuelo $vuelo)
+    {
+        $vuelo->delete();
         return redirect()->back();
     }
 
@@ -131,7 +186,7 @@ class VueloController extends Controller
     public function historial()
     {
         // Añadimos el "with" para que Laravel traiga los nombres de instructores y alumnos
-        $vuelos = \App\Models\Vuelo::with(['instructor', 'alumno'])
+        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorValidador', 'alumno'])
             ->orderBy('fecha', 'desc')
             ->orderBy('etd', 'desc')
             ->get();
@@ -149,7 +204,7 @@ class VueloController extends Controller
             ->orderBy('nombre')
             ->get();
 
-        $instructoresActivos = \App\Models\Instructor::where('activo', true)->orderBy('nombre')->get();
+        $instructoresActivos = \App\Models\Instructor::where('activo', true)->orderByRaw('numero IS NULL, numero ASC')->get();
 
         return inertia('Pizarra/Evaluaciones', [
             'alumnos' => $alumnos,
@@ -161,7 +216,7 @@ class VueloController extends Controller
     {
         return inertia('Pizarra/CargaRapida', [
             'alumnos' => \App\Models\Alumno::orderBy('nombre')->get(),
-            'instructores' => \App\Models\Instructor::orderBy('nombre')->get(),
+            'instructores' => \App\Models\Instructor::orderByRaw('numero IS NULL, numero ASC')->get(),
         ]);
     }
 

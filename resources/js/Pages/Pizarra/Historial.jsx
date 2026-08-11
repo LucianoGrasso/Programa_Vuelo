@@ -8,7 +8,7 @@ export default function Historial({ auth, vuelos }) {
     // FILTRO INTELIGENTE: Busca coincidencias ignorando si hay campos nulos
     const vuelosFiltrados = vuelos.filter(vuelo => {
         const termino = busqueda.toLowerCase();
-        const instructorStr = vuelo.instructor?.nombre?.toLowerCase() || '';
+        const instructorStr = `${vuelo.instructor?.nombre_combate || ''} ${vuelo.instructor?.nombre || ''}`.toLowerCase();
         const alumnoStr = vuelo.alumno?.nombre?.toLowerCase() || '';
         const misionStr = vuelo.mision?.toLowerCase() || '';
         const aeronaveStr = vuelo.aeronave?.toLowerCase() || '';
@@ -119,7 +119,12 @@ export default function Historial({ auth, vuelos }) {
                                             <td className="px-3 py-3 whitespace-nowrap text-xs font-mono text-gray-200">{vuelo.eta.substring(0, 5)}</td>
                                             <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-300 font-medium">{vuelo.mision}</td>
                                             <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-300">
-                                                <span className="font-semibold text-gray-200">{vuelo.instructor?.nombre || 'S/I'}</span> / <span className="text-gray-400">{vuelo.alumno?.nombre || 'S/A'}</span>
+                                                <span className="font-semibold text-gray-200">{vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || 'S/I'}</span> / <span className="text-gray-400">{vuelo.alumno?.nombre || 'S/A'}</span>
+                                                {vuelo.instructor_validador && (
+                                                    <div className="text-[10px] text-purple-400 font-bold">
+                                                        Val: {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-3 py-3 whitespace-nowrap text-xs font-bold text-green-400">{vuelo.nota || '-'}</td>
                                         </tr>
