@@ -119,7 +119,15 @@ export default function Historial({ auth, vuelos }) {
                                             <td className="px-3 py-3 whitespace-nowrap text-xs font-mono text-gray-200">{vuelo.eta.substring(0, 5)}</td>
                                             <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-300 font-medium">{vuelo.mision}</td>
                                             <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-300">
-                                                <span className="font-semibold text-gray-200">{vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || 'S/I'}</span> / <span className="text-gray-400">{vuelo.alumno?.nombre || 'S/A'}</span>
+                                                {vuelo.instructor && vuelo.alumno ? (
+                                                    <>
+                                                        <span className="font-semibold text-gray-200">{vuelo.instructor.nombre_combate || vuelo.instructor.nombre}</span> / <span className="text-gray-400">{vuelo.alumno.nombre}</span>
+                                                    </>
+                                                ) : (
+                                                    // Vuelo solo: mostramos solo el nombre de quien vuela,
+                                                    // sin el "/ S/A" o "S/I /".
+                                                    <span className="font-semibold text-gray-200">{vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || vuelo.alumno?.nombre}</span>
+                                                )}
                                                 {vuelo.instructor_validador && (
                                                     <div className="text-[10px] text-purple-400 font-bold">
                                                         Val: {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}

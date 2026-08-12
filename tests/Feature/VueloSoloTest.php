@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Alumno;
 use App\Models\Instructor;
+use App\Models\NovedadDiaria;
 use App\Models\User;
 use App\Models\Vuelo;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,6 +61,13 @@ class VueloSoloTest extends TestCase
         // regla es específica de cuando el que vuela solo es el alumno.
         $admin = User::factory()->create(['role' => 'admin']);
         $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+
+        // El FTR solo se puede volar en una aeronave marcada "de baja" en el
+        // tablero de novedades del día.
+        NovedadDiaria::create([
+            'fecha' => now()->toDateString(),
+            'aeronaves' => [['nombre' => 'NAVAL 211', 'estado' => 'baja', 'detalle' => '']],
+        ]);
 
         $this->actingAs($admin)->post(route('pizarra.store'), [
             ...$this->datosBaseVuelo(),

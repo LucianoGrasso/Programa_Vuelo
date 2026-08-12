@@ -32,16 +32,14 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         return LISTA_AERONAVES.map(nombre => ({ nombre, estado: 'disponible', detalle: '' }));
     };
 
-    // El formulario de novedades se guarda entero (aeronaves + instructores +
-    // alumnos) cada vez, aunque solo se haya tocado una parte. Por eso, para
-    // decidir si "hoy" ya tiene datos propios de observaciones, no alcanza con
-    // que exista el array del día: puede existir pero con todo en blanco (se
-    // guardó el tablero por otro motivo). En ese caso seguimos heredando del
-    // último día con contenido real.
-    const tieneObservacionReal = (arr) => Array.isArray(arr) && arr.some(o => o?.observacion?.trim());
-
+    // Si hoy ya tiene su propio registro de novedades (aunque esté en blanco
+    // porque alguien borró una observación), ese es el estado real más
+    // reciente y gana. Antes se ignoraba un registro de hoy "en blanco" y se
+    // seguía heredando de un día anterior con contenido, lo que resucitaba
+    // notas ya borradas al día siguiente (bug real, corregido acá) — mismo
+    // criterio que ya usa initAeronaves.
     const initObsInstructores = (guardadasHoy, historico, listaInstructores) => {
-        const fuente = tieneObservacionReal(guardadasHoy)
+        const fuente = Array.isArray(guardadasHoy) && guardadasHoy.length > 0
             ? guardadasHoy
             : (Array.isArray(historico) ? historico : []);
         const mapa = fuente.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {});
@@ -54,7 +52,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     };
 
     const initObsAlumnos = (guardadasHoy, historico, listaAlumnos) => {
-        const fuente = tieneObservacionReal(guardadasHoy)
+        const fuente = Array.isArray(guardadasHoy) && guardadasHoy.length > 0
             ? guardadasHoy
             : (Array.isArray(historico) ? historico : []);
         const mapa = fuente.reduce((acc, curr) => ({...acc, [curr.id]: curr.observacion}), {});
@@ -189,6 +187,22 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             return; // Bloquea el guardado
         }
 
+        // Una aeronave de baja solo puede volar con código FTR (es el vuelo que la
+        // saca de ese estado), y el código FTR es exclusivo de una aeronave de baja.
+        const aeronaveSeleccionada = aeronavesDisponibles.find(a => a.nombre === aeronave);
+        const esAeronaveDeBaja = aeronaveSeleccionada?.estado === 'baja';
+        const esMisionFtr = mision === 'FTR';
+
+        if (esAeronaveDeBaja && !esMisionFtr) {
+            setErrorValidacion('INCONGRUENCIA: Esta aeronave está de baja. Solo se le puede registrar un vuelo con código FTR.');
+            return;
+        }
+
+        if (esMisionFtr && !esAeronaveDeBaja) {
+            setErrorValidacion('INCONGRUENCIA: El código FTR es solo para una aeronave que está de baja. Seleccione la aeronave correspondiente.');
+            return;
+        }
+
         // Puede volar solo el alumno o solo el instructor (vuelo solo / FTR), pero no
         // pueden faltar los dos a la vez.
         if (!formVuelo.data.instructor_id && !formVuelo.data.alumno_id) {
@@ -299,11 +313,21 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                 <td className="px-2 py-3 whitespace-nowrap text-xs font-mono text-gray-200">{vuelo.eta.substring(0, 5)}</td>
                                 <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-300 font-medium">{vuelo.mision}</td>
                                 <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-300 text-center">
-                                    <span className="font-semibold text-gray-200">
-                                        {vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || 'S/I'}
-                                    </span> / <span className="text-gray-400">
-                                        {vuelo.alumno?.nombre || 'S/A'}
-                                    </span>
+                                    {vuelo.instructor && vuelo.alumno ? (
+                                        <>
+                                            <span className="font-semibold text-gray-200">
+                                                {vuelo.instructor.nombre_combate || vuelo.instructor.nombre}
+                                            </span> / <span className="text-gray-400">
+                                                {vuelo.alumno.nombre}
+                                            </span>
+                                        </>
+                                    ) : (
+                                        // Vuelo solo (alumno o instructor sin el otro): mostramos
+                                        // solo el nombre de quien vuela, sin el "/ S/A" o "S/I /".
+                                        <span className="font-semibold text-gray-200">
+                                            {vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || vuelo.alumno?.nombre}
+                                        </span>
+                                    )}
                                     {vuelo.instructor_validador && (
                                         <div className="text-[10px] text-purple-400 font-bold mt-0.5">
                                             Validado por {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}

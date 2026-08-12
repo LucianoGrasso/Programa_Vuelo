@@ -52,6 +52,54 @@ class VueloController extends Controller
         };
     }
 
+    /**
+     * Estado actual de una aeronave según el tablero de Novedades del Día: el de
+     * hoy si tiene datos propios, si no el último registrado (mismo criterio que
+     * ya usa el tablero para pintar la aeronave como disponible/de baja).
+     */
+    private function estadoActualAeronave(string $aeronave): string
+    {
+        $novedadHoy = NovedadDiaria::where('fecha', now()->toDateString())->first();
+        $aeronaves = ($novedadHoy && is_array($novedadHoy->aeronaves) && count($novedadHoy->aeronaves) > 0)
+            ? $novedadHoy->aeronaves
+            : (NovedadDiaria::whereNotNull('aeronaves')->orderBy('fecha', 'desc')->first(['aeronaves'])?->aeronaves ?? []);
+
+        foreach ($aeronaves as $item) {
+            if (($item['nombre'] ?? null) === $aeronave) {
+                return $item['estado'] ?? 'disponible';
+            }
+        }
+
+        // Aeronaves que no están en el tablero (ej. SIM) se consideran disponibles.
+        return 'disponible';
+    }
+
+    /**
+     * Una aeronave de baja solo puede volar con código FTR (es justo el vuelo que
+     * la saca de ese estado), y el código FTR es exclusivo de una aeronave de baja.
+     */
+    private function reglaAeronaveDeBajaSoloFtr(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            $aeronave = $request->input('aeronave');
+
+            if (!$aeronave || $aeronave === 'SIM') {
+                return;
+            }
+
+            $esDeBaja = $this->estadoActualAeronave($aeronave) === 'baja';
+            $esFtr = strtoupper(trim($value)) === 'FTR';
+
+            if ($esDeBaja && !$esFtr) {
+                $fail('Esta aeronave está de baja: solo se le puede registrar un vuelo con código FTR.');
+            }
+
+            if ($esFtr && !$esDeBaja) {
+                $fail('El código FTR es solo para una aeronave que está de baja.');
+            }
+        };
+    }
+
     public function index()
     {
         $hoy = now()->toDateString();
@@ -95,18 +143,19 @@ class VueloController extends Controller
 
     /**
      * Busca, para una columna de observaciones de NovedadDiaria (obs_instructores u
-     * obs_alumnos), el registro no vacío más reciente. No alcanza con que la columna
-     * no sea null: un día sin ninguna observación cargada igual guarda un array con
-     * "observacion" en null para cada persona, y no queremos que ese día en blanco
-     * tape la última observación real de un día anterior.
+     * obs_alumnos), el valor del registro más reciente — sea cual sea su contenido.
+     *
+     * A propósito NO nos saltamos los días "en blanco": si alguien borró una
+     * observación y guardó, ese día en blanco es el estado real más reciente y
+     * tiene que ganar. Saltarlo para buscar el último día con contenido real
+     * resucitaba notas viejas ya borradas al día siguiente (bug real, corregido
+     * acá). Mismo criterio que ya usa el historial de aeronaves.
      */
     private function ultimoEstadoObservaciones(string $columna): ?array
     {
         $ultimaNovedad = \App\Models\NovedadDiaria::whereNotNull($columna)
             ->orderBy('fecha', 'desc')
-            ->get(['fecha', $columna])
-            ->first(fn ($novedad) => collect($novedad->{$columna})
-                ->contains(fn ($obs) => filled($obs['observacion'] ?? null)));
+            ->first(['fecha', $columna]);
 
         return $ultimaNovedad?->{$columna};
     }
@@ -118,7 +167,7 @@ class VueloController extends Controller
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => 'required|string',
-            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request)],
+            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request), $this->reglaAeronaveDeBajaSoloFtr($request)],
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
@@ -142,7 +191,7 @@ class VueloController extends Controller
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => 'required|string',
-            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id)],
+            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaAeronaveDeBajaSoloFtr($request)],
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
