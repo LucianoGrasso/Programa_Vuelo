@@ -128,9 +128,9 @@ export default function Historial({ auth, vuelos }) {
                                                     // sin el "/ S/A" o "S/I /".
                                                     <span className="font-semibold text-gray-200">{vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || vuelo.alumno?.nombre}</span>
                                                 )}
-                                                {vuelo.instructor_validador && (
+                                                {vuelo.instructor_en_habilitacion && (
                                                     <div className="text-[10px] text-purple-400 font-bold">
-                                                        Val: {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}
+                                                        Hab: {vuelo.instructor_en_habilitacion.nombre_combate || vuelo.instructor_en_habilitacion.nombre}
                                                     </div>
                                                 )}
                                             </td>

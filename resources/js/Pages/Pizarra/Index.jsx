@@ -70,7 +70,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         eta: '',
         mision: '',
         instructor_id: '',
-        instructor_validador_id: '',
+        instructor_en_habilitacion_id: '',
         alumno_id: '',
         nota: '',
         estado_progreso: 'programado'
@@ -132,7 +132,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
     const openCreateModal = () => {
         setEditingVuelo(null);
-        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_validador_id', 'alumno_id', 'nota', 'estado_progreso');
+        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'alumno_id', 'nota', 'estado_progreso');
         formVuelo.setData('fecha', fechaHoy);
         setIsCustomZona(false);
         setErrorValidacion('');
@@ -148,7 +148,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             eta: vuelo.eta.substring(0, 5),
             mision: vuelo.mision,
             instructor_id: vuelo.instructor_id,
-            instructor_validador_id: vuelo.instructor_validador_id,
+            instructor_en_habilitacion_id: vuelo.instructor_en_habilitacion_id,
             alumno_id: vuelo.alumno_id,
             nota: vuelo.nota || '',
             estado_progreso: vuelo.estado_progreso || 'programado',
@@ -172,6 +172,11 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
         const mision = formVuelo.data.mision ? formVuelo.data.mision.toUpperCase() : '';
         const aeronave = formVuelo.data.aeronave;
+
+        if (formVuelo.data.etd && formVuelo.data.eta && formVuelo.data.eta <= formVuelo.data.etd) {
+            setErrorValidacion('INCONGRUENCIA: La hora de llegada (ETA) tiene que ser posterior a la hora de salida (ETD).');
+            return;
+        }
 
         // LÓGICA DE VALIDACIÓN ESTRICTA
         const isSimMission = mision.startsWith('S') || mision.includes('SIM');
@@ -328,9 +333,9 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                             {vuelo.instructor?.nombre_combate || vuelo.instructor?.nombre || vuelo.alumno?.nombre}
                                         </span>
                                     )}
-                                    {vuelo.instructor_validador && (
+                                    {vuelo.instructor_en_habilitacion && (
                                         <div className="text-[10px] text-purple-400 font-bold mt-0.5">
-                                            Validado por {vuelo.instructor_validador.nombre_combate || vuelo.instructor_validador.nombre}
+                                            Habilitando a {vuelo.instructor_en_habilitacion.nombre_combate || vuelo.instructor_en_habilitacion.nombre}
                                         </div>
                                     )}
                                 </td>
@@ -632,8 +637,8 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                 </select>
                                             </div>
                                             <div className="sm:col-span-2">
-                                                <label className="block text-xs font-bold uppercase tracking-wider text-purple-400">Instructor Validador (habilitación, opcional)</label>
-                                                <select value={formVuelo.data.instructor_validador_id} onChange={e => formVuelo.setData('instructor_validador_id', e.target.value)} className={inputStyle}>
+                                                <label className="block text-xs font-bold uppercase tracking-wider text-purple-400">Instructor en Habilitación (opcional)</label>
+                                                <select value={formVuelo.data.instructor_en_habilitacion_id} onChange={e => formVuelo.setData('instructor_en_habilitacion_id', e.target.value)} className={inputStyle}>
                                                     <option value="" className="text-gray-500">— No aplica —</option>
                                                     {instructores.filter(inst => String(inst.id) !== String(formVuelo.data.instructor_id)).map(inst => (
                                                         <option key={inst.id} value={inst.id} className="text-white">
@@ -641,7 +646,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                         </option>
                                                     ))}
                                                 </select>
-                                                <p className="text-[10px] text-gray-500 mt-1">Usar solo cuando este vuelo es una habilitación: el Instructor de arriba está siendo evaluado por este instructor validador.</p>
+                                                <p className="text-[10px] text-gray-500 mt-1">Usar solo cuando este vuelo es una habilitación: el Instructor de arriba le está enseñando/evaluando a este instructor, para que pueda instruir a los alumnos.</p>
                                             </div>
                                         </div>
                                         <div className="sm:col-span-2">

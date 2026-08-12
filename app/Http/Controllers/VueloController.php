@@ -100,12 +100,28 @@ class VueloController extends Controller
         };
     }
 
+    /**
+     * La hora de llegada (ETA) tiene que ser posterior a la de salida (ETD).
+     * Ambas llegan como strings "HH:MM", así que la comparación de texto
+     * alcanza (formato de 24hs con cero a la izquierda).
+     */
+    private function reglaHorarioCoherente(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            $etd = $request->input('etd');
+
+            if ($etd && $value && $value <= $etd) {
+                $fail('La hora de llegada (ETA) tiene que ser posterior a la hora de salida (ETD).');
+            }
+        };
+    }
+
     public function index()
     {
         $hoy = now()->toDateString();
         $ayer = now()->subDay()->toDateString();
 
-        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorValidador', 'alumno'])
+        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorEnHabilitacion', 'alumno'])
                        ->where('fecha', '>=', $ayer)
                        ->orderBy('fecha', 'asc')
                        ->orderBy('etd', 'asc')
@@ -166,14 +182,16 @@ class VueloController extends Controller
             'fecha' => 'required|date',
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
-            'eta' => 'required|string',
+            'eta' => ['required', 'string', $this->reglaHorarioCoherente($request)],
             'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request), $this->reglaAeronaveDeBajaSoloFtr($request)],
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
-            // Vuelo de habilitación: un instructor senior valida a otro (sin alumno).
-            'instructor_validador_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            // Vuelo de habilitación: instructor_id (el "normal") enseña/evalúa a este
+            // instructor, que está siendo habilitado para poder instruir alumnos (sin
+            // alumno a bordo en este vuelo).
+            'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
@@ -190,13 +208,13 @@ class VueloController extends Controller
             'fecha' => 'required|date',
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
-            'eta' => 'required|string',
+            'eta' => ['required', 'string', $this->reglaHorarioCoherente($request)],
             'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaAeronaveDeBajaSoloFtr($request)],
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
-            'instructor_validador_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
@@ -235,7 +253,7 @@ class VueloController extends Controller
     public function historial()
     {
         // Añadimos el "with" para que Laravel traiga los nombres de instructores y alumnos
-        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorValidador', 'alumno'])
+        $vuelos = \App\Models\Vuelo::with(['instructor', 'instructorEnHabilitacion', 'alumno'])
             ->orderBy('fecha', 'desc')
             ->orderBy('etd', 'desc')
             ->get();

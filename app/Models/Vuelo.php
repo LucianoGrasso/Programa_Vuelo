@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Vuelo extends Model
 {
     protected $fillable = [
-        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_validador_id', 'alumno_id', 'nota', 'estado_progreso', 'calificacion'
+        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'alumno_id', 'nota', 'estado_progreso', 'calificacion'
     ];
 
     public function instructor(): BelongsTo
@@ -16,9 +16,13 @@ class Vuelo extends Model
         return $this->belongsTo(Instructor::class, 'instructor_id');
     }
 
-    public function instructorValidador(): BelongsTo
+    /**
+     * Vuelo de habilitación: instructor_id es quien enseña/evalúa; este es el
+     * instructor que está siendo habilitado (evaluado) por ese instructor_id.
+     */
+    public function instructorEnHabilitacion(): BelongsTo
     {
-        return $this->belongsTo(Instructor::class, 'instructor_validador_id');
+        return $this->belongsTo(Instructor::class, 'instructor_en_habilitacion_id');
     }
 
     public function alumno(): BelongsTo
