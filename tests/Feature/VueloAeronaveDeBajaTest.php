@@ -92,4 +92,26 @@ class VueloAeronaveDeBajaTest extends TestCase
 
         $this->assertDatabaseHas('vuelos', ['aeronave' => 'NAVAL 215', 'mision' => 'PS-3D']);
     }
+
+    public function test_una_evaluacion_manual_se_registra_aunque_la_aeronave_de_relleno_este_de_baja(): void
+    {
+        // El "Ingreso Manual de Evaluación" es una cruz de matriz histórica: usa una
+        // aeronave de relleno (NAVAL 211) y no debe pasar por la regla operativa de
+        // aeronave de baja, igual que ya lo hace la carga rápida (storeBulk).
+        $admin = User::factory()->create(['role' => 'admin']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+        $alumno = \App\Models\Alumno::create(['nombre' => 'Alumno Uno', 'activo' => true]);
+        $this->marcarAeronaveDeBaja('NAVAL 211'); // la aeronave de relleno del modal
+
+        $this->actingAs($admin)->post(route('pizarra.store'), [
+            ...$this->datosBaseVuelo(),
+            'aeronave' => 'NAVAL 211',
+            'mision' => 'PS-3D',
+            'instructor_id' => $instructor->id,
+            'alumno_id' => $alumno->id,
+            'es_evaluacion_manual' => true,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('vuelos', ['aeronave' => 'NAVAL 211', 'mision' => 'PS-3D']);
+    }
 }

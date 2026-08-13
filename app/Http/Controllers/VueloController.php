@@ -6,6 +6,7 @@ use App\Models\Vuelo;
 use App\Models\Instructor;
 use App\Models\Alumno;
 use App\Models\NovedadDiaria;
+use App\Support\SyllabusMisiones;
 use Illuminate\Http\Request;
 
 class VueloController extends Controller
@@ -101,6 +102,22 @@ class VueloController extends Controller
     }
 
     /**
+     * Un vuelo con dos instructores (instructor_id + un segundo instructor, sea par
+     * tipo ADEX o en habilitación) no puede registrarse en una misión del programa
+     * del alumno: esas misiones son evaluaciones que van en la matriz del alumno.
+     */
+    private function reglaDosInstructoresNoEnSyllabus(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            $haySegundoInstructor = filled($request->input('instructor_en_habilitacion_id'));
+
+            if ($haySegundoInstructor && SyllabusMisiones::esDeSyllabus($value)) {
+                $fail('No se puede registrar un vuelo de dos instructores en una misión del programa del alumno.');
+            }
+        };
+    }
+
+    /**
      * La hora de llegada (ETA) tiene que ser posterior a la de salida (ETD).
      * Ambas llegan como strings "HH:MM", así que la comparación de texto
      * alcanza (formato de 24hs con cero a la izquierda).
@@ -178,20 +195,31 @@ class VueloController extends Controller
 
     public function store(Request $request)
     {
+        // El "Ingreso Manual de Evaluación" registra una cruz de matriz histórica con
+        // una aeronave de relleno (no un vuelo operativo del día), así que no debe pasar
+        // por la regla de aeronave de baja/FTR — mismo criterio que la carga rápida.
+        $esEvaluacionManual = $request->boolean('es_evaluacion_manual');
+
+        $reglasMision = ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request), $this->reglaDosInstructoresNoEnSyllabus($request)];
+        if (!$esEvaluacionManual) {
+            $reglasMision[] = $this->reglaAeronaveDeBajaSoloFtr($request);
+        }
+
         $validated = $request->validate([
             'fecha' => 'required|date',
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => ['required', 'string', $this->reglaHorarioCoherente($request)],
-            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request), $this->reglaAeronaveDeBajaSoloFtr($request)],
+            'mision' => $reglasMision,
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
-            // Vuelo de habilitación: instructor_id (el "normal") enseña/evalúa a este
-            // instructor, que está siendo habilitado para poder instruir alumnos (sin
-            // alumno a bordo en este vuelo).
+            // Segundo instructor: puede ser un instructor en habilitación (lo evalúa
+            // el instructor_id) o un co-instructor par que vuela junto sin capacitar a
+            // nadie (ej. ADEX). El flag es_vuelo_habilitacion distingue los dos casos.
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            'es_vuelo_habilitacion' => 'nullable|boolean',
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
@@ -209,12 +237,13 @@ class VueloController extends Controller
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => ['required', 'string', $this->reglaHorarioCoherente($request)],
-            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaAeronaveDeBajaSoloFtr($request)],
+            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaDosInstructoresNoEnSyllabus($request), $this->reglaAeronaveDeBajaSoloFtr($request)],
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
+            'es_vuelo_habilitacion' => 'nullable|boolean',
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',

@@ -81,7 +81,10 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
         etd: '00:00', eta: '01:00',
         mision: '', instructor_id: '', alumno_id: '', nota: '',
         estado_progreso: 'arribado',
-        calificacion: 'aprobado'
+        calificacion: 'aprobado',
+        // Marca este ingreso como cruz de matriz histórica: usa una aeronave de relleno
+        // y no debe validarse contra el estado operativo (aeronave de baja/FTR).
+        es_evaluacion_manual: true
     });
 
     const handleManualSubmit = (e) => {
