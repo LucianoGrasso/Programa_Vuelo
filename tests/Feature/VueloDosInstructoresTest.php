@@ -108,11 +108,11 @@ class VueloDosInstructoresTest extends TestCase
             ...$this->datosBaseVuelo(),
             'mision' => 'FERRY',
             'instructor_id' => $instructor->id,
-            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+            'segundo_instructor_externo' => 'Tte. Fuentes (VC-1)',
         ])->assertRedirect()->assertSessionHasNoErrors();
 
         $vuelo = Vuelo::first();
-        $this->assertSame('Cap. Rossi (FACH)', $vuelo->segundo_instructor_externo);
+        $this->assertSame('Tte. Fuentes (VC-1)', $vuelo->segundo_instructor_externo);
         $this->assertNull($vuelo->instructor_en_habilitacion_id);
         $this->assertFalse($vuelo->es_vuelo_habilitacion);
     }
@@ -126,7 +126,7 @@ class VueloDosInstructoresTest extends TestCase
             ...$this->datosBaseVuelo(),
             'mision' => 'PS-3D',
             'instructor_id' => $instructor->id,
-            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+            'segundo_instructor_externo' => 'Tte. Fuentes (VC-1)',
         ])->assertSessionHasErrors('mision');
 
         $this->assertDatabaseMissing('vuelos', ['mision' => 'PS-3D']);
@@ -142,7 +142,7 @@ class VueloDosInstructoresTest extends TestCase
             'mision' => 'FERRY',
             'instructor_id' => $a->id,
             'instructor_en_habilitacion_id' => $b->id,
-            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+            'segundo_instructor_externo' => 'Tte. Fuentes (VC-1)',
         ])->assertSessionHasErrors('segundo_instructor_externo');
 
         $this->assertDatabaseMissing('vuelos', ['mision' => 'FERRY']);
@@ -157,7 +157,7 @@ class VueloDosInstructoresTest extends TestCase
             ...$this->datosBaseVuelo(),
             'mision' => 'FERRY',
             'instructor_id' => $instructor->id,
-            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+            'segundo_instructor_externo' => 'Tte. Fuentes (VC-1)',
             'es_vuelo_habilitacion' => true,
         ])->assertSessionHasErrors('es_vuelo_habilitacion');
 

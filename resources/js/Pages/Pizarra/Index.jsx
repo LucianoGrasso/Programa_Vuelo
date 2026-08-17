@@ -691,7 +691,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                     <>
                                                         <input
                                                             type="text"
-                                                            placeholder="Nombre y afiliación, ej. Cap. Rossi (FACH)"
+                                                            placeholder="Nombre y afiliación, ej. Tte. Fuentes (VC-1)"
                                                             value={formVuelo.data.segundo_instructor_externo}
                                                             onChange={e => formVuelo.setData('segundo_instructor_externo', e.target.value)}
                                                             className={`${inputStyle} mt-2`}
