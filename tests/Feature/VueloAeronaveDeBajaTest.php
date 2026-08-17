@@ -114,4 +114,37 @@ class VueloAeronaveDeBajaTest extends TestCase
 
         $this->assertDatabaseHas('vuelos', ['aeronave' => 'NAVAL 211', 'mision' => 'PS-3D']);
     }
+
+    public function test_editar_una_evaluacion_manual_no_falla_aunque_la_aeronave_de_relleno_este_de_baja(): void
+    {
+        // Mismo caso que el ingreso manual, pero al EDITAR una cruz ya cargada desde
+        // la matriz (doble clic): también debe omitir la regla operativa de
+        // aeronave de baja, porque sigue siendo un registro histórico de matriz.
+        $admin = User::factory()->create(['role' => 'admin']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+        $alumno = \App\Models\Alumno::create(['nombre' => 'Alumno Uno', 'activo' => true]);
+
+        $vuelo = \App\Models\Vuelo::create([
+            ...$this->datosBaseVuelo(),
+            'aeronave' => 'NAVAL 211',
+            'mision' => 'PS-3D',
+            'instructor_id' => $instructor->id,
+            'alumno_id' => $alumno->id,
+            'calificacion' => 'pendiente',
+        ]);
+
+        $this->marcarAeronaveDeBaja('NAVAL 211'); // se da de baja DESPUÉS de cargada la cruz
+
+        $this->actingAs($admin)->put(route('pizarra.update', $vuelo->id), [
+            ...$this->datosBaseVuelo(),
+            'aeronave' => 'NAVAL 211',
+            'mision' => 'PS-3D',
+            'instructor_id' => $instructor->id,
+            'alumno_id' => $alumno->id,
+            'calificacion' => 'aprobado',
+            'es_evaluacion_manual' => true,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('vuelos', ['id' => $vuelo->id, 'calificacion' => 'aprobado']);
+    }
 }

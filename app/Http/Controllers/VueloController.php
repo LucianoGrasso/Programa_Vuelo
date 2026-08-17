@@ -268,12 +268,22 @@ class VueloController extends Controller
 
     public function update(Request $request, Vuelo $vuelo)
     {
+        // Igual que en store(): editar una cruz de matriz histórica (desde el modal
+        // de Evaluaciones) tampoco debe pasar por la regla operativa de aeronave de
+        // baja/FTR, sea cual sea el estado actual de la aeronave de relleno.
+        $esEvaluacionManual = $request->boolean('es_evaluacion_manual');
+
+        $reglasMision = ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaDosInstructoresNoEnSyllabus($request)];
+        if (!$esEvaluacionManual) {
+            $reglasMision[] = $this->reglaAeronaveDeBajaSoloFtr($request);
+        }
+
         $validated = $request->validate([
             'fecha' => 'required|date',
             'aeronave' => 'required|string|max:255',
             'etd' => 'required|string',
             'eta' => ['required', 'string', $this->reglaHorarioCoherente($request)],
-            'mision' => ['required', 'string', 'max:255', $this->reglaMisionSolo($request), $this->reglaMisionDuplicada($request, $vuelo->id), $this->reglaDosInstructoresNoEnSyllabus($request), $this->reglaAeronaveDeBajaSoloFtr($request)],
+            'mision' => $reglasMision,
             // Vuelo solo: puede volar el alumno sin instructor (primer solo) o el
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.

@@ -111,6 +111,10 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
         router.put(route('pizarra.update', vueloEditando.id), {
             ...vueloEditando,
             ...edicion,
+            // Esta edición es siempre sobre una cruz de matriz (viene del modal de
+            // Evaluaciones), así que no debe validarse contra el estado operativo
+            // de la aeronave de relleno — mismo criterio que el ingreso manual.
+            es_evaluacion_manual: true,
         }, {
             preserveScroll: true,
             onSuccess: () => setVueloEditando(null),
