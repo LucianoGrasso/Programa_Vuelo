@@ -98,4 +98,69 @@ class VueloDosInstructoresTest extends TestCase
 
         $this->assertDatabaseHas('vuelos', ['mision' => 'PS-3D']);
     }
+
+    public function test_segundo_instructor_externo_se_permite_en_mision_libre(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+
+        $this->actingAs($admin)->post(route('pizarra.store'), [
+            ...$this->datosBaseVuelo(),
+            'mision' => 'FERRY',
+            'instructor_id' => $instructor->id,
+            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+        ])->assertRedirect()->assertSessionHasNoErrors();
+
+        $vuelo = Vuelo::first();
+        $this->assertSame('Cap. Rossi (FACH)', $vuelo->segundo_instructor_externo);
+        $this->assertNull($vuelo->instructor_en_habilitacion_id);
+        $this->assertFalse($vuelo->es_vuelo_habilitacion);
+    }
+
+    public function test_segundo_instructor_externo_se_bloquea_en_mision_del_syllabus(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+
+        $this->actingAs($admin)->post(route('pizarra.store'), [
+            ...$this->datosBaseVuelo(),
+            'mision' => 'PS-3D',
+            'instructor_id' => $instructor->id,
+            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+        ])->assertSessionHasErrors('mision');
+
+        $this->assertDatabaseMissing('vuelos', ['mision' => 'PS-3D']);
+    }
+
+    public function test_no_se_puede_mandar_segundo_instructor_interno_y_externo_a_la_vez(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        [$a, $b] = $this->dosInstructores();
+
+        $this->actingAs($admin)->post(route('pizarra.store'), [
+            ...$this->datosBaseVuelo(),
+            'mision' => 'FERRY',
+            'instructor_id' => $a->id,
+            'instructor_en_habilitacion_id' => $b->id,
+            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+        ])->assertSessionHasErrors('segundo_instructor_externo');
+
+        $this->assertDatabaseMissing('vuelos', ['mision' => 'FERRY']);
+    }
+
+    public function test_no_se_puede_marcar_habilitacion_con_segundo_instructor_externo(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $instructor = Instructor::create(['nombre' => 'T1 Base', 'nombre_combate' => 'BASE']);
+
+        $this->actingAs($admin)->post(route('pizarra.store'), [
+            ...$this->datosBaseVuelo(),
+            'mision' => 'FERRY',
+            'instructor_id' => $instructor->id,
+            'segundo_instructor_externo' => 'Cap. Rossi (FACH)',
+            'es_vuelo_habilitacion' => true,
+        ])->assertSessionHasErrors('es_vuelo_habilitacion');
+
+        $this->assertDatabaseMissing('vuelos', ['mision' => 'FERRY']);
+    }
 }

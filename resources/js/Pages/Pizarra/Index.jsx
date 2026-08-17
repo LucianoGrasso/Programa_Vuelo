@@ -29,6 +29,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
     const [activeTabNovedades, setActiveTabNovedades] = useState('instructores');
     const [isCustomZona, setIsCustomZona] = useState(false);
     const [isCustomMision, setIsCustomMision] = useState(false);
+    const [isSegundoInstructorExterno, setIsSegundoInstructorExterno] = useState(false);
     const [errorValidacion, setErrorValidacion] = useState('');
 
     const initAeronaves = (guardadasHoy, historico) => {
@@ -77,6 +78,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
         instructor_id: '',
         instructor_en_habilitacion_id: '',
         es_vuelo_habilitacion: false,
+        segundo_instructor_externo: '',
         alumno_id: '',
         nota: '',
         estado_progreso: 'programado'
@@ -138,9 +140,10 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
 
     const openCreateModal = () => {
         setEditingVuelo(null);
-        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'es_vuelo_habilitacion', 'alumno_id', 'nota', 'estado_progreso');
+        formVuelo.reset('aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'es_vuelo_habilitacion', 'segundo_instructor_externo', 'alumno_id', 'nota', 'estado_progreso');
         formVuelo.setData('fecha', fechaHoy);
         setIsCustomZona(false);
+        setIsSegundoInstructorExterno(false);
         setErrorValidacion('');
         setIsModalOpen(true);
     };
@@ -156,11 +159,13 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             instructor_id: vuelo.instructor_id,
             instructor_en_habilitacion_id: vuelo.instructor_en_habilitacion_id,
             es_vuelo_habilitacion: vuelo.es_vuelo_habilitacion ?? false,
+            segundo_instructor_externo: vuelo.segundo_instructor_externo || '',
             alumno_id: vuelo.alumno_id,
             nota: vuelo.nota || '',
             estado_progreso: vuelo.estado_progreso || 'programado',
             calificacion: vuelo.calificacion || 'pendiente' // Aseguramos traer la calificación
         });
+        setIsSegundoInstructorExterno(!!vuelo.segundo_instructor_externo);
         const zonaActual = vuelo.nota || '';
         setIsCustomZona(!['', 'R-1', 'R-35', 'R-67'].includes(zonaActual));
 
@@ -229,9 +234,10 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             return;
         }
 
-        // Un vuelo de dos instructores (par tipo ADEX o en habilitación) no puede
-        // registrarse en una misión del programa del alumno: esas van en la matriz.
-        if (formVuelo.data.instructor_en_habilitacion_id && MISIONES_SYLLABUS.has(mision)) {
+        // Un vuelo de dos instructores (de la ficha o externo, par o en habilitación)
+        // no puede registrarse en una misión del programa del alumno: esas van en la matriz.
+        const haySegundoInstructor = formVuelo.data.instructor_en_habilitacion_id || formVuelo.data.segundo_instructor_externo;
+        if (haySegundoInstructor && MISIONES_SYLLABUS.has(mision)) {
             setErrorValidacion('INCONGRUENCIA: No se puede registrar un vuelo de dos instructores en una misión del programa del alumno.');
             return;
         }
@@ -351,7 +357,14 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                         <div className="text-[10px] text-purple-400 font-bold mt-0.5">
                                             {vuelo.es_vuelo_habilitacion
                                                 ? `Habilitando a ${vuelo.instructor_en_habilitacion.nombre_combate || vuelo.instructor_en_habilitacion.nombre}`
-                                                : `+ ${vuelo.instructor_en_habilitacion.nombre_combate || vuelo.instructor_en_habilitacion.nombre} (ADEX)`}
+                                                // Vuelo de dos instructores par: no asumimos qué tipo de misión es (ADEX es
+                                                // solo un ejemplo, hay varias); el código real ya se ve en la columna CÓDIGO.
+                                                : `+ ${vuelo.instructor_en_habilitacion.nombre_combate || vuelo.instructor_en_habilitacion.nombre}`}
+                                        </div>
+                                    )}
+                                    {vuelo.segundo_instructor_externo && (
+                                        <div className="text-[10px] text-purple-400 font-bold mt-0.5">
+                                            + {vuelo.segundo_instructor_externo} <span className="text-purple-300/70 font-normal">(externo)</span>
                                         </div>
                                     )}
                                 </td>
@@ -654,10 +667,17 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                             </div>
                                             <div className="sm:col-span-2">
                                                 <label className="block text-xs font-bold uppercase tracking-wider text-purple-400">Segundo Instructor (opcional)</label>
-                                                <select value={formVuelo.data.instructor_en_habilitacion_id} onChange={e => {
+                                                <select value={isSegundoInstructorExterno ? '__externo__' : formVuelo.data.instructor_en_habilitacion_id} onChange={e => {
                                                     const val = e.target.value;
-                                                    // Al quitar el segundo instructor, el flag de habilitación deja de aplicar.
-                                                    formVuelo.setData(prev => ({ ...prev, instructor_en_habilitacion_id: val, es_vuelo_habilitacion: val ? prev.es_vuelo_habilitacion : false }));
+                                                    if (val === '__externo__') {
+                                                        setIsSegundoInstructorExterno(true);
+                                                        // Externo: no es de la ficha, así que no puede ser vuelo de habilitación.
+                                                        formVuelo.setData(prev => ({ ...prev, instructor_en_habilitacion_id: '', es_vuelo_habilitacion: false }));
+                                                    } else {
+                                                        setIsSegundoInstructorExterno(false);
+                                                        // Al quitar el segundo instructor, el flag de habilitación deja de aplicar.
+                                                        formVuelo.setData(prev => ({ ...prev, instructor_en_habilitacion_id: val, segundo_instructor_externo: '', es_vuelo_habilitacion: val ? prev.es_vuelo_habilitacion : false }));
+                                                    }
                                                 }} className={inputStyle}>
                                                     <option value="" className="text-gray-500">— No aplica —</option>
                                                     {instructores.filter(inst => String(inst.id) !== String(formVuelo.data.instructor_id)).map(inst => (
@@ -665,8 +685,20 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                             {inst.nombre_combate || inst.nombre}
                                                         </option>
                                                     ))}
+                                                    <option value="__externo__" className="text-yellow-400">Otro (instructor externo)...</option>
                                                 </select>
-                                                {formVuelo.data.instructor_en_habilitacion_id ? (
+                                                {isSegundoInstructorExterno ? (
+                                                    <>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Nombre y afiliación, ej. Cap. Rossi (FACH)"
+                                                            value={formVuelo.data.segundo_instructor_externo}
+                                                            onChange={e => formVuelo.setData('segundo_instructor_externo', e.target.value)}
+                                                            className={`${inputStyle} mt-2`}
+                                                        />
+                                                        <p className="text-[10px] text-gray-500 mt-1">Alguien externo a la escuela (no tiene ficha de instructor ni alumno acá). No se permite en misiones del programa del alumno.</p>
+                                                    </>
+                                                ) : formVuelo.data.instructor_en_habilitacion_id ? (
                                                     <>
                                                         <label className="flex items-center gap-2 mt-2 cursor-pointer">
                                                             <input type="checkbox" checked={!!formVuelo.data.es_vuelo_habilitacion} onChange={e => formVuelo.setData('es_vuelo_habilitacion', e.target.checked)} className="text-purple-500 focus:ring-purple-500 rounded" />
@@ -675,11 +707,11 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                         <p className="text-[10px] text-gray-500 mt-1">
                                                             {formVuelo.data.es_vuelo_habilitacion
                                                                 ? 'Habilitación: el Instructor de arriba le está enseñando/evaluando a este instructor para que pueda instruir alumnos.'
-                                                                : 'Vuelo de dos instructores como pares (ej. ADEX): vuelan juntos sin que uno capacite al otro. No se permite en misiones del programa del alumno.'}
+                                                                : 'Vuelo de dos instructores como pares (ej. ADEX, y otras misiones similares): vuelan juntos sin que uno capacite al otro. No se permite en misiones del programa del alumno.'}
                                                         </p>
                                                     </>
                                                 ) : (
-                                                    <p className="text-[10px] text-gray-500 mt-1">Agregá un segundo instructor para vuelos de dos instructores (par tipo ADEX o de habilitación).</p>
+                                                    <p className="text-[10px] text-gray-500 mt-1">Agregá un segundo instructor (de la ficha o "Otro" externo) para vuelos de dos instructores.</p>
                                                 )}
                                             </div>
                                         </div>

@@ -102,17 +102,51 @@ class VueloController extends Controller
     }
 
     /**
-     * Un vuelo con dos instructores (instructor_id + un segundo instructor, sea par
-     * tipo ADEX o en habilitación) no puede registrarse en una misión del programa
-     * del alumno: esas misiones son evaluaciones que van en la matriz del alumno.
+     * ¿El vuelo tiene un segundo instructor? Puede ser de la ficha (de la escuela)
+     * o externo (nombre libre) — los dos casos son "dos instructores volando".
+     */
+    private function haySegundoInstructor(Request $request): bool
+    {
+        return filled($request->input('instructor_en_habilitacion_id')) || filled($request->input('segundo_instructor_externo'));
+    }
+
+    /**
+     * Un vuelo con dos instructores (instructor_id + un segundo instructor, sea de
+     * la ficha o externo, par o en habilitación) no puede registrarse en una misión
+     * del programa del alumno: esas misiones son evaluaciones que van en la matriz.
      */
     private function reglaDosInstructoresNoEnSyllabus(Request $request): \Closure
     {
         return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
-            $haySegundoInstructor = filled($request->input('instructor_en_habilitacion_id'));
-
-            if ($haySegundoInstructor && SyllabusMisiones::esDeSyllabus($value)) {
+            if ($this->haySegundoInstructor($request) && SyllabusMisiones::esDeSyllabus($value)) {
                 $fail('No se puede registrar un vuelo de dos instructores en una misión del programa del alumno.');
+            }
+        };
+    }
+
+    /**
+     * El segundo instructor es o de la ficha (instructor_en_habilitacion_id) o
+     * externo (nombre libre): nunca los dos a la vez.
+     */
+    private function reglaSegundoInstructorExclusivo(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            if (filled($value) && filled($request->input('instructor_en_habilitacion_id'))) {
+                $fail('El segundo instructor no puede ser de la ficha y externo a la vez.');
+            }
+        };
+    }
+
+    /**
+     * La habilitación es siempre interna: un instructor de la escuela evaluando a
+     * otro instructor de la escuela. No aplica cuando el segundo instructor es
+     * externo (nombre libre, sin ficha).
+     */
+    private function reglaHabilitacionSoloConSegundoInstructorInterno(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            if ($request->boolean('es_vuelo_habilitacion') && filled($request->input('segundo_instructor_externo'))) {
+                $fail('El vuelo de habilitación no aplica a un segundo instructor externo.');
             }
         };
     }
@@ -215,11 +249,13 @@ class VueloController extends Controller
             // instructor sin alumno (FTR de una aeronave saliendo de mantención),
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
-            // Segundo instructor: puede ser un instructor en habilitación (lo evalúa
-            // el instructor_id) o un co-instructor par que vuela junto sin capacitar a
-            // nadie (ej. ADEX). El flag es_vuelo_habilitacion distingue los dos casos.
+            // Segundo instructor: puede ser un instructor de la ficha (en habilitación
+            // o par, ej. ADEX) o alguien externo a la escuela (segundo_instructor_externo,
+            // nombre libre, sin ficha) — mutuamente excluyentes entre sí. El flag
+            // es_vuelo_habilitacion distingue par/habilitación y no aplica a un externo.
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
-            'es_vuelo_habilitacion' => 'nullable|boolean',
+            'segundo_instructor_externo' => ['nullable', 'string', 'max:255', $this->reglaSegundoInstructorExclusivo($request)],
+            'es_vuelo_habilitacion' => ['nullable', 'boolean', $this->reglaHabilitacionSoloConSegundoInstructorInterno($request)],
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
@@ -243,7 +279,8 @@ class VueloController extends Controller
             // pero no puede faltar los dos a la vez.
             'instructor_id' => 'nullable|required_without:alumno_id|exists:instructores,id',
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
-            'es_vuelo_habilitacion' => 'nullable|boolean',
+            'segundo_instructor_externo' => ['nullable', 'string', 'max:255', $this->reglaSegundoInstructorExclusivo($request)],
+            'es_vuelo_habilitacion' => ['nullable', 'boolean', $this->reglaHabilitacionSoloConSegundoInstructorInterno($request)],
             'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',

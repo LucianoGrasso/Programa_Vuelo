@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Vuelo extends Model
 {
     protected $fillable = [
-        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'es_vuelo_habilitacion', 'alumno_id', 'nota', 'estado_progreso', 'calificacion'
+        'fecha', 'aeronave', 'etd', 'eta', 'mision', 'instructor_id', 'instructor_en_habilitacion_id', 'es_vuelo_habilitacion', 'segundo_instructor_externo', 'alumno_id', 'nota', 'estado_progreso', 'calificacion'
     ];
 
     protected $casts = [
