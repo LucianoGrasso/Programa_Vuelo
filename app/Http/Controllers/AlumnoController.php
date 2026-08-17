@@ -45,7 +45,10 @@ class AlumnoController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:alumnos',
-            'activo' => 'boolean'
+            'activo' => 'boolean',
+            // Opcional: sin email, el alumno simplemente no recibe el NOTAM diario
+            // (comando notam:enviar).
+            'email' => 'nullable|email|max:255',
         ]);
 
         Alumno::create($validated);
@@ -56,7 +59,8 @@ class AlumnoController extends Controller
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:alumnos,nombre,' . $alumno->id,
-            'activo' => 'boolean'
+            'activo' => 'boolean',
+            'email' => 'nullable|email|max:255',
         ]);
 
         $alumno->update($validated);

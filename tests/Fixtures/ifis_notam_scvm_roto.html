@@ -1,0 +1,18 @@
+<!-- Fixture: simula que la DGAC cambió el markup (el badge dice que hay 15 NOTAM
+     pero no hay ningún <tr class="notam_raw"> reconocible) — debe tratarse como
+     falla del parser, no como "0 NOTAM vigentes". -->
+<html>
+<body>
+<div class="notam-categorias">
+    <a href="/notam?designador=SCVM" class="boton"> Notams (15)</a>
+</div>
+<table>
+<caption>Descripción de Informe NOTAM para aeródromo Viña del Mar (PUB)(SCVM)</caption>
+<tbody>
+    <tr class="fila-nueva-que-ya-no-reconocemos">
+        <td class="contenido-nuevo">W2523/26 NOTAMN ...</td>
+    </tr>
+</tbody>
+</table>
+</body>
+</html>

@@ -10,6 +10,7 @@ export default function Alumnos({ auth, alumnos }) {
     const { data, setData, post, put, processing, reset, errors } = useForm({
         nombre: '',
         activo: true,
+        email: '',
     });
 
     const openCreateModal = () => {
@@ -23,6 +24,7 @@ export default function Alumnos({ auth, alumnos }) {
         setData({
             nombre: alumno.nombre,
             activo: alumno.activo,
+            email: alumno.email || '',
         });
         setIsModalOpen(true);
     };
@@ -79,6 +81,7 @@ export default function Alumnos({ auth, alumnos }) {
                                 <thead className="bg-gray-900/40">
                                     <tr>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Grado y Apellido</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Email (NOTAM diario)</th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Vuelos Registrados</th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Vencimiento</th>
                                         <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Estado Operativo</th>
@@ -90,6 +93,11 @@ export default function Alumnos({ auth, alumnos }) {
                                         <tr key={alumno.id} className={`hover:bg-gray-700/40 transition-colors ${!alumno.activo && 'opacity-50'}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-200">
                                                 {alumno.nombre}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-xs">
+                                                {alumno.email
+                                                    ? <span className="text-gray-300">{alumno.email}</span>
+                                                    : <span className="text-gray-600 italic">Sin cargar</span>}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 {/* CONTADOR DE VUELOS */}
@@ -134,7 +142,7 @@ export default function Alumnos({ auth, alumnos }) {
                                         </tr>
                                     ))}
                                     {alumnos.length === 0 && (
-                                        <tr><td colSpan={isAdmin ? 5 : 4} className="px-6 py-8 text-sm text-center text-gray-500 italic">No hay alumnos registrados.</td></tr>
+                                        <tr><td colSpan={isAdmin ? 6 : 5} className="px-6 py-8 text-sm text-center text-gray-500 italic">No hay alumnos registrados.</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -154,6 +162,12 @@ export default function Alumnos({ auth, alumnos }) {
                                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Grado y Apellido del Alumno</label>
                                         <input type="text" placeholder="Ej: T2 Laymuns" value={data.nombre} onChange={e => setData('nombre', e.target.value)} className={inputStyle} required />
                                         {errors.nombre && <p className="text-red-400 text-xs mt-2 font-bold">{errors.nombre}</p>}
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Email (opcional)</label>
+                                        <input type="email" placeholder="alumno@correo.com" value={data.email} onChange={e => setData('email', e.target.value)} className={inputStyle} />
+                                        <p className="text-[10px] text-gray-500 mt-1">Si se carga, el alumno recibe automáticamente el NOTAM diario por correo a las 06:00.</p>
+                                        {errors.email && <p className="text-red-400 text-xs mt-2 font-bold">{errors.email}</p>}
                                     </div>
                                     <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700/60 mt-6">
                                         <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancelar</button>
