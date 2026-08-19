@@ -62,4 +62,32 @@ class AlumnoEmailTest extends TestCase
 
         $this->assertDatabaseHas('alumnos', ['id' => $alumno->id, 'email' => 'nuevo@escuela.cl']);
     }
+
+    public function test_recibe_notam_es_true_por_defecto_al_cargar_el_email(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)->post(route('alumnos.store'), [
+            'nombre' => 'T2 Prueba',
+            'activo' => true,
+            'email' => 'tprueba@escuela.cl',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('alumnos', ['nombre' => 'T2 Prueba', 'recibe_notam' => true]);
+    }
+
+    public function test_se_puede_desactivar_el_notam_sin_borrar_el_email(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $alumno = Alumno::create(['nombre' => 'T2 Existente', 'activo' => true, 'email' => 'existente@escuela.cl']);
+
+        $this->actingAs($admin)->put(route('alumnos.update', $alumno->id), [
+            'nombre' => 'T2 Existente',
+            'activo' => true,
+            'email' => 'existente@escuela.cl',
+            'recibe_notam' => false,
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('alumnos', ['id' => $alumno->id, 'email' => 'existente@escuela.cl', 'recibe_notam' => false]);
+    }
 }

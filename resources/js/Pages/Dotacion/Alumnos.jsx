@@ -11,6 +11,7 @@ export default function Alumnos({ auth, alumnos }) {
         nombre: '',
         activo: true,
         email: '',
+        recibe_notam: true,
     });
 
     const openCreateModal = () => {
@@ -25,6 +26,7 @@ export default function Alumnos({ auth, alumnos }) {
             nombre: alumno.nombre,
             activo: alumno.activo,
             email: alumno.email || '',
+            recibe_notam: alumno.recibe_notam ?? true,
         });
         setIsModalOpen(true);
     };
@@ -95,9 +97,16 @@ export default function Alumnos({ auth, alumnos }) {
                                                 {alumno.nombre}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-xs">
-                                                {alumno.email
-                                                    ? <span className="text-gray-300">{alumno.email}</span>
-                                                    : <span className="text-gray-600 italic">Sin cargar</span>}
+                                                {alumno.email ? (
+                                                    <>
+                                                        <span className="text-gray-300">{alumno.email}</span>
+                                                        {!alumno.recibe_notam && (
+                                                            <div className="text-[10px] text-gray-500 italic mt-0.5">NOTAM desactivado</div>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span className="text-gray-600 italic">Sin cargar</span>
+                                                )}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 {/* CONTADOR DE VUELOS */}
@@ -166,9 +175,15 @@ export default function Alumnos({ auth, alumnos }) {
                                     <div>
                                         <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Email (opcional)</label>
                                         <input type="email" placeholder="alumno@correo.com" value={data.email} onChange={e => setData('email', e.target.value)} className={inputStyle} />
-                                        <p className="text-[10px] text-gray-500 mt-1">Si se carga, el alumno recibe automáticamente el NOTAM diario por correo a las 06:00.</p>
+                                        <p className="text-[10px] text-gray-500 mt-1">Se usa, entre otras cosas, para el NOTAM diario por correo a las 06:00.</p>
                                         {errors.email && <p className="text-red-400 text-xs mt-2 font-bold">{errors.email}</p>}
                                     </div>
+                                    {data.email && (
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" checked={data.recibe_notam} onChange={e => setData('recibe_notam', e.target.checked)} className="text-blue-500 focus:ring-blue-500 rounded" />
+                                            <span className="text-xs font-bold text-gray-300">Recibir el NOTAM diario en este email</span>
+                                        </label>
+                                    )}
                                     <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700/60 mt-6">
                                         <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-xs font-bold uppercase text-gray-400 hover:text-white">Cancelar</button>
                                         <button type="submit" disabled={processing} className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase py-2 px-5 rounded-md shadow-lg">Guardar Registro</button>

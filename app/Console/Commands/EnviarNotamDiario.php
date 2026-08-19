@@ -13,7 +13,7 @@ class EnviarNotamDiario extends Command
 {
     protected $signature = 'notam:enviar';
 
-    protected $description = 'Manda por correo el NOTAM del día (IFIS) a los alumnos activos con email cargado';
+    protected $description = 'Manda por correo el NOTAM del día (IFIS) a los alumnos activos con email cargado y recibe_notam activo';
 
     public function handle(NotamScraper $scraper): int
     {
@@ -29,7 +29,13 @@ class EnviarNotamDiario extends Command
             $notams = null;
         }
 
-        $destinatarios = Alumno::where('activo', true)->whereNotNull('email')->where('email', '!=', '')->get();
+        // recibe_notam es independiente de tener el email cargado: un alumno puede
+        // guardar su email para otro uso sin que eso implique recibir este correo.
+        $destinatarios = Alumno::where('activo', true)
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->where('recibe_notam', true)
+            ->get();
 
         if ($destinatarios->isEmpty()) {
             $this->info('No hay alumnos activos con email cargado: no se envía nada.');

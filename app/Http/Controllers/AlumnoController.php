@@ -49,6 +49,9 @@ class AlumnoController extends Controller
             // Opcional: sin email, el alumno simplemente no recibe el NOTAM diario
             // (comando notam:enviar).
             'email' => 'nullable|email|max:255',
+            // Independiente del email: permite guardarlo para otro uso sin que
+            // implique recibir el NOTAM diario. Default true (columna en BD).
+            'recibe_notam' => 'boolean',
         ]);
 
         Alumno::create($validated);
@@ -61,6 +64,7 @@ class AlumnoController extends Controller
             'nombre' => 'required|string|max:255|unique:alumnos,nombre,' . $alumno->id,
             'activo' => 'boolean',
             'email' => 'nullable|email|max:255',
+            'recibe_notam' => 'boolean',
         ]);
 
         $alumno->update($validated);
