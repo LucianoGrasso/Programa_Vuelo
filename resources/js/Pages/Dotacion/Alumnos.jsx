@@ -60,7 +60,7 @@ export default function Alumnos({ auth, alumnos }) {
             <Head title="Gestión de Alumnos" />
 
             <div className="py-8 bg-gray-950 min-h-screen">
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
                     
                     {/* ENCABEZADO */}
                     <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-800 pb-4 gap-4">
