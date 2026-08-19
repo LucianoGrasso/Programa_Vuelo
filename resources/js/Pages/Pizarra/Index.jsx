@@ -242,6 +242,13 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
             return;
         }
 
+        // Un vuelo son dos asientos, no tres: no puede llevar instructor + alumno +
+        // segundo instructor a la vez, sea cual sea el código de misión.
+        if (formVuelo.data.alumno_id && haySegundoInstructor) {
+            setErrorValidacion('INCONGRUENCIA: Un vuelo no puede llevar instructor, alumno y segundo instructor a la vez (máximo dos personas a bordo).');
+            return;
+        }
+
         submitFinalPayload(formVuelo.data);
     };
 
@@ -627,7 +634,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                 {isCustomMision && (
                                                     <input 
                                                         type="text" 
-                                                        placeholder="Ej: FERRY, VIP..." 
+                                                        placeholder="Ej: ADEX, VIP..." 
                                                         value={formVuelo.data.mision} 
                                                         onChange={e => {
                                                             const nuevoValor = e.target.value.toUpperCase();

@@ -125,6 +125,21 @@ class VueloController extends Controller
     }
 
     /**
+     * Un vuelo no puede llevar instructor + alumno + segundo instructor (de la
+     * ficha o externo) a la vez: son dos asientos, no tres. Aplica siempre, sea
+     * cual sea el código de misión — no es una regla sobre el syllabus, es sobre
+     * cuántas personas caben a bordo.
+     */
+    private function reglaSinTresOcupantes(Request $request): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+            if (filled($value) && $this->haySegundoInstructor($request)) {
+                $fail('Un vuelo no puede llevar instructor, alumno y segundo instructor a la vez (máximo dos personas a bordo).');
+            }
+        };
+    }
+
+    /**
      * El segundo instructor es o de la ficha (instructor_en_habilitacion_id) o
      * externo (nombre libre): nunca los dos a la vez.
      */
@@ -256,7 +271,7 @@ class VueloController extends Controller
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
             'segundo_instructor_externo' => ['nullable', 'string', 'max:255', $this->reglaSegundoInstructorExclusivo($request)],
             'es_vuelo_habilitacion' => ['nullable', 'boolean', $this->reglaHabilitacionSoloConSegundoInstructorInterno($request)],
-            'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
+            'alumno_id' => ['nullable', 'required_without:instructor_id', 'exists:alumnos,id', $this->reglaSinTresOcupantes($request)],
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
             'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
@@ -291,7 +306,7 @@ class VueloController extends Controller
             'instructor_en_habilitacion_id' => 'nullable|different:instructor_id|exists:instructores,id',
             'segundo_instructor_externo' => ['nullable', 'string', 'max:255', $this->reglaSegundoInstructorExclusivo($request)],
             'es_vuelo_habilitacion' => ['nullable', 'boolean', $this->reglaHabilitacionSoloConSegundoInstructorInterno($request)],
-            'alumno_id' => 'nullable|required_without:instructor_id|exists:alumnos,id',
+            'alumno_id' => ['nullable', 'required_without:instructor_id', 'exists:alumnos,id', $this->reglaSinTresOcupantes($request)],
             'nota' => 'nullable|string|max:255',
             'estado_progreso' => 'nullable|string|in:programado,en_vuelo,arribado,cancelado',
             'calificacion' => 'nullable|string|in:pendiente,aprobado,reprobado',
