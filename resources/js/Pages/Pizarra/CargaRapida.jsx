@@ -46,7 +46,7 @@ export default function CargaRapida({ auth, alumnos, instructores }) {
         e.preventDefault();
 
         if (!alumnoId) {
-            setMensaje('Seleccioná primero el alumno.');
+            setMensaje('Selecciona primero el alumno.');
             return;
         }
 

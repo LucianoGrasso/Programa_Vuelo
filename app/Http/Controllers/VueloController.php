@@ -48,7 +48,7 @@ class VueloController extends Controller
                 ->exists();
 
             if ($existe) {
-                $fail("Este alumno ya tiene un vuelo registrado con el código \"{$value}\". Si es una repetición, usá un código EX REP.");
+                $fail("Este alumno ya tiene un vuelo registrado con el código \"{$value}\". Si es una repetición, usa un código EX REP.");
             }
         };
     }

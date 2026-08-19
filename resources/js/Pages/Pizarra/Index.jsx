@@ -718,7 +718,7 @@ export default function Pizarra({ auth, vuelos, instructores, alumnos, fechaHoy,
                                                         </p>
                                                     </>
                                                 ) : (
-                                                    <p className="text-[10px] text-gray-500 mt-1">Agregá un segundo instructor (de la ficha o "Otro" externo) para vuelos de dos instructores.</p>
+                                                    <p className="text-[10px] text-gray-500 mt-1">Agrega un segundo instructor (de la ficha o "Otro" externo) para vuelos de dos instructores.</p>
                                                 )}
                                             </div>
                                         </div>

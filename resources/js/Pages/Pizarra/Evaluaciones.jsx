@@ -104,7 +104,7 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
         // El alumno solo puede volar sin instructor en una misión designada como
         // "solo" en el syllabus (código terminado en S, ej. PS-17S, P-2S, A-4S).
         if (!edicion.instructor_id && !edicion.mision.toUpperCase().endsWith('S')) {
-            setErrorEdicion('INCONGRUENCIA: Sin instructor asignado, esta misión no puede quedar como vuelo solo (el código no termina en "S"). Asigná un instructor.');
+            setErrorEdicion('INCONGRUENCIA: Sin instructor asignado, esta misión no puede quedar como vuelo solo (el código no termina en "S"). Asigna un instructor.');
             return;
         }
 
@@ -124,7 +124,7 @@ export default function Evaluaciones({ auth, alumnos, instructores }) {
 
     const handleEliminarVuelo = () => {
         if (!vueloEditando) return;
-        if (!confirm(`¿Seguro que querés eliminar el vuelo "${vueloEditando.mision}"? Esta acción no se puede deshacer.`)) return;
+        if (!confirm(`¿Seguro que quieres eliminar el vuelo "${vueloEditando.mision}"? Esta acción no se puede deshacer.`)) return;
 
         router.delete(route('pizarra.destroy', vueloEditando.id), {
             preserveScroll: true,
