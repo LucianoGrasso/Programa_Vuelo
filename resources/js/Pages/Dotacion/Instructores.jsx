@@ -56,35 +56,36 @@ export default function Instructores({ auth, instructores }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
                     
                     {/* CABECERA */}
-                    <div className="flex justify-between items-center border-b border-gray-800 pb-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-gray-800 pb-4 gap-4">
                         <div>
                             <h1 className="text-2xl font-bold tracking-wider text-white uppercase">Nómina de Instructores</h1>
                             <p className="text-sm text-gray-400 mt-1">Gestión de personal de instrucción y nombres de combate</p>
                         </div>
-                        <button 
-                            onClick={openCreateModal} 
-                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-md shadow-lg transition-all"
+                        <button
+                            onClick={openCreateModal}
+                            className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase tracking-wider py-3 px-6 rounded-md shadow-lg flex items-center justify-center space-x-2"
                         >
-                            + Nuevo Instructor
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                            <span>Nuevo Instructor</span>
                         </button>
                     </div>
 
                     {/* TABLA DE INSTRUCTORES */}
-                    <div className="bg-gray-800/40 rounded-xl border border-gray-700 shadow-2xl overflow-hidden">
+                    <div className="bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-700">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-700 text-left">
-                                <thead className="bg-gray-900/60">
+                                <thead className="bg-gray-900/40">
                                     <tr>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Grado y Apellido</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-blue-400 uppercase tracking-widest">Nombre de Combate</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">N° Matriz</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-center">Estado</th>
-                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Acciones</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Grado y Apellido</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-blue-400 uppercase tracking-wider">Nombre de Combate</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">N° Matriz</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-center">Estado</th>
+                                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-700/50 bg-gray-800/20">
+                                <tbody className="divide-y divide-gray-700/60 bg-gray-800/20">
                                     {instructores.map((instructor) => (
-                                        <tr key={instructor.id} className="hover:bg-gray-700/30 transition-colors">
+                                        <tr key={instructor.id} className={`hover:bg-gray-700/40 transition-colors ${!instructor.activo && 'opacity-50'}`}>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300 font-medium">
                                                 {instructor.nombre}
                                             </td>
@@ -95,18 +96,18 @@ export default function Instructores({ auth, instructores }) {
                                                 {instructor.numero || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <button 
-                                                    onClick={() => toggleActivo(instructor)}
-                                                    className={`px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors ${instructor.activo ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}
-                                                >
+                                                <span className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-widest border ${instructor.activo ? 'bg-green-500/10 text-green-400 border-green-500/30' : 'bg-gray-700/50 text-gray-400 border-gray-600'}`}>
                                                     {instructor.activo ? 'Operativo' : 'Inactivo'}
-                                                </button>
+                                                </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                <button 
-                                                    onClick={() => openEditModal(instructor)} 
-                                                    className="text-gray-400 hover:text-blue-400 font-bold uppercase text-[11px] tracking-wider transition-colors"
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-xs flex justify-end items-center space-x-2">
+                                                <button
+                                                    onClick={() => toggleActivo(instructor)}
+                                                    className={`px-3 py-1.5 rounded text-[10px] font-bold uppercase transition-all border ${instructor.activo ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30' : 'bg-green-500/10 hover:bg-green-500/20 text-green-400 border-green-500/30'}`}
                                                 >
+                                                    {instructor.activo ? 'Desactivar' : 'Reactivar'}
+                                                </button>
+                                                <button onClick={() => openEditModal(instructor)} className="bg-gray-700/50 hover:bg-blue-600 text-gray-300 px-3 py-1.5 rounded text-[10px] font-bold uppercase transition-all">
                                                     Editar
                                                 </button>
                                             </td>
