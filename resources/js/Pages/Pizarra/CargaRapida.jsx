@@ -81,7 +81,7 @@ export default function CargaRapida({ auth, alumnos, instructores }) {
                 setFilas({});
                 setMensaje(`Se guardaron ${vuelos.length} evaluaciones de "${etapaActual.nombre}".`);
             },
-            onError: () => setMensaje('Hubo un error al guardar. Revisá los datos e intentá de nuevo.'),
+            onError: () => setMensaje('Hubo un error al guardar. Revisa los datos e intenta de nuevo.'),
             onFinish: () => setProcessing(false),
         });
     };
@@ -95,7 +95,7 @@ export default function CargaRapida({ auth, alumnos, instructores }) {
 
                     <div className="border-b border-gray-800 pb-4">
                         <h1 className="text-2xl font-bold tracking-wider text-white uppercase">Carga Rápida de Evaluaciones</h1>
-                        <p className="text-sm text-gray-400 mt-1">Pensada para traspasar de una sola vez el historial de un pizarrón físico: elegí alumno y etapa, completá las filas que correspondan y guardá todo junto.</p>
+                        <p className="text-sm text-gray-400 mt-1">Pensada para traspasar de una sola vez el historial de un pizarrón físico: elige a un alumno y etapa, completa las filas que correspondan y guarda todo junto.</p>
                     </div>
 
                     <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 flex flex-col sm:flex-row gap-4">
@@ -116,7 +116,7 @@ export default function CargaRapida({ auth, alumnos, instructores }) {
 
                     {!alumnoId ? (
                         <div className="bg-gray-800/40 border border-gray-700 rounded-xl p-8 text-center text-sm text-gray-500 italic">
-                            Elegí un alumno arriba para empezar a cargar sus misiones de "{etapaActual.nombre}".
+                            Elige un alumno arriba para empezar a cargar sus misiones de "{etapaActual.nombre}".
                         </div>
                     ) : (
                         <form onSubmit={handleGuardarTodo} className="space-y-4">
@@ -125,7 +125,7 @@ export default function CargaRapida({ auth, alumnos, instructores }) {
                                     <table className="min-w-full divide-y divide-gray-700">
                                         <thead className="bg-gray-900/40">
                                             <tr>
-                                                <th className="px-3 py-3 text-left text-[10px] font-bold text-blue-400 uppercase tracking-wider w-24">Misión</th>
+                                                <th className="px-3 py-3 text-left text-[10px] font-bold text-blue-400 uppercase tracking-wider w-24">Evaluación</th>
                                                 <th className="px-3 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider">Instructor</th>
                                                 <th className="px-3 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider w-28">Zona</th>
                                                 <th className="px-3 py-3 text-left text-[10px] font-bold text-gray-400 uppercase tracking-wider w-40">Fecha</th>
