@@ -36,7 +36,7 @@
                         <!-- Información del desarrollador -->
                         <div class="text-center md:text-right">
                             <p class="text-gray-300 text-sm">
-                                Desarrollado por <span class="text-blue-400 font-semibold">Luciano Grasso</span>
+                                Desarrollado por <span class="text-blue-400 font-semibold">Luciano Grasso</span>, con la ayuda de los alumnos pilotos 2026
                             </p>
                             <p class="text-gray-400 text-xs">
                                 Encargado del Simulador
@@ -47,7 +47,7 @@
                     <!-- Línea separadora -->
                     <div class="mt-4 pt-4 border-t border-blue-400">
                         <p class="text-center text-gray-500 text-xs">
-                            Versión beta
+                            Versión 1.0
                         </p>
                     </div>
                 </div>
